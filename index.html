@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAMU - Systém analýzy mimoriadnych udalostí</title>
+    <link rel="icon" href="./css/favicon.png" type="image/x-icon">
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Background Effects -->
+    <div class="bg-gradient"></div>
+    <div class="bg-pattern"></div>
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo-container">
+                <div class="logo-icon">
+                    <img src="./css/logo.svg" alt="Logo" class="logo-img">
+                </div>
+                <div class="logo-text">
+                    <h1>SAMU</h1>
+                    <p>Risk Analysis</p>
+                </div>
+            </div>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-view="analysis">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                <span>Analýza území</span>
+                <div class="nav-indicator"></div>
+            </button>
+            
+            <button class="nav-item" data-view="statistics">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <line x1="12" y1="20" x2="12" y2="10"></line>
+                    <line x1="18" y1="20" x2="18" y2="4"></line>
+                    <line x1="6" y1="20" x2="6" y2="16"></line>
+                </svg>
+                <span>Štatistiky</span>
+                <div class="nav-indicator"></div>
+            </button>
+            
+            <button class="nav-item" data-view="codelists">
+                <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                <span>Kódovníky</span>
+                <div class="nav-indicator"></div>
+            </button>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="user-profile">
+                <div class="user-avatar">
+                    <span>A</span>
+                </div>
+                <div class="user-info">
+                    <div class="user-name">Admin</div>
+                    <div class="user-role">Správca systému</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-container">
+        <!-- Top Bar -->
+        <header class="topbar">
+            <div class="topbar-left">
+                <button class="menu-toggle" id="menuToggle">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <div class="breadcrumb">
+                    <span class="breadcrumb-item active" id="currentViewTitle">Analýza území</span>
+                </div>
+            </div>
+            
+            <div class="topbar-right">
+                <button class="icon-btn" id="notificationsBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                        <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                    </svg>
+                    <span class="notification-badge">3</span>
+                </button>
+                
+                <button class="btn-primary" id="exportBtn">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                    </svg>
+                    <span>Export</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- ========================================
+             VIEW 1: ANALÝZA ÚZEMÍ
+             ======================================== -->
+        <div id="analysisView" class="view-container">
+            <!-- Risk Overview Cards -->
+            <section class="stats-grid">
+                <div class="stat-card critical-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon-wrapper critical">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-trend up">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            </svg>
+                            <span>+12%</span>
+                        </div>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number" id="criticalCount">0</h3>
+                        <p class="stat-label">Kritické riziko</p>
+                    </div>
+                    <div class="stat-footer">
+                        <span class="stat-subtext">Vyžaduje okamžitú pozornosť</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card high-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon-wrapper high">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                <polyline points="2 17 12 22 22 17"></polyline>
+                                <polyline points="2 12 12 17 22 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-trend up">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+                            </svg>
+                            <span>+8%</span>
+                        </div>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number" id="highCount">0</h3>
+                        <p class="stat-label">Vysoké riziko</p>
+                    </div>
+                    <div class="stat-footer">
+                        <span class="stat-subtext">Monitorovať priebežne</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card medium-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon-wrapper medium">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 6v6l4 2"></path>
+                            </svg>
+                        </div>
+                        <div class="stat-trend neutral">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                            </svg>
+                            <span>0%</span>
+                        </div>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number" id="mediumCount">0</h3>
+                        <p class="stat-label">Stredné riziko</p>
+                    </div>
+                    <div class="stat-footer">
+                        <span class="stat-subtext">Pravidelná kontrola</span>
+                    </div>
+                </div>
+                
+                <div class="stat-card low-card">
+                    <div class="stat-card-header">
+                        <div class="stat-icon-wrapper low">
+                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        <div class="stat-trend down">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline>
+                            </svg>
+                            <span>-5%</span>
+                        </div>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number" id="lowCount">0</h3>
+                        <p class="stat-label">Nízke riziko</p>
+                    </div>
+                    <div class="stat-footer">
+                        <span class="stat-subtext">Stabilný stav</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Filters Panel -->
+            <section class="filters-panel">
+                <div class="panel-header">
+                    <div class="panel-title">
+                        <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                        </svg>
+                        <h2>Filtrovanie a vyhľadávanie</h2>
+                    </div>
+                    <button class="btn-primary" id="addRecordBtn">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        <span>Pridať záznam</span>
+                    </button>
+                </div>
+                
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                                <circle cx="12" cy="10" r="3"></circle>
+                            </svg>
+                            Kraj
+                        </label>
+                        <select id="filterRegion" class="filter-select">
+                            <option value="">Všetky kraje</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="10" r="3"></circle>
+                                <path d="M12 21.7C17.3 17 20 13 20 10a8 8 0 1 0-16 0c0 3 2.7 6.9 8 11.7z"></path>
+                            </svg>
+                            Okres
+                        </label>
+                        <select id="filterDistrict" class="filter-select">
+                            <option value="">Všetky okresy</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                <circle cx="12" cy="7" r="4"></circle>
+                            </svg>
+                            Obec
+                        </label>
+                        <select id="filterMunicipality" class="filter-select">
+                            <option value="">Všetky obce</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group">
+                        <label class="filter-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            Úroveň rizika
+                        </label>
+                        <select id="filterRisk" class="filter-select">
+                            <option value="">Všetky úrovne</option>
+                            <option value="critical">🔴 Kritické</option>
+                            <option value="high">🟠 Vysoké</option>
+                            <option value="medium">🟡 Stredné</option>
+                            <option value="low">🟢 Nízke</option>
+                        </select>
+                    </div>
+                    
+                    <div class="filter-group search-group">
+                        <label class="filter-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                            Vyhľadávanie
+                        </label>
+                        <div class="search-input-wrapper">
+                            <input type="text" id="searchInput" class="filter-input" placeholder="Zadajte hľadaný výraz...">
+                            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="11" cy="11" r="8"></circle>
+                                <path d="m21 21-4.35-4.35"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <div class="filter-actions">
+                        <button class="btn-secondary" id="applyFiltersBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Aplikovať
+                        </button>
+                        <button class="btn-outline" id="resetFiltersBtn">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="1 4 1 10 7 10"></polyline>
+                                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                            </svg>
+                            Resetovať
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Table -->
+            <section class="data-panel">
+                <div class="table-wrapper">
+                    <table class="modern-table" id="dataTable">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Riziko</span>
+                                        <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M12 5v14M5 12l7 7 7-7"></path>
+                                        </svg>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Obec</span>
+                                        <svg class="sort-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                            <path d="M12 5v14M5 12l7 7 7-7"></path>
+                                        </svg>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Okres</span>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Kraj</span>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Krízový jav</span>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Ohrozujúci faktor</span>
+                                    </div>
+                                </th>
+                                <th>
+                                    <div class="th-content">
+                                        <span>Pravdepodobnosť</span>
+                                    </div>
+                                </th>
+                                <th class="actions-cell">
+                                    <div class="th-content">
+                                        <span>Akcie</span>
+                                    </div>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <!-- Data loaded from Supabase -->
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <!-- ========================================
+             VIEW 2: ŠTATISTIKY
+             ======================================== -->
+        <div id="statisticsView" class="view-container" style="display: none;">
+            <div class="statistics-layout">
+                <!-- Statistics Filters -->
+                <section class="stats-filter-panel">
+                    <div class="panel-header">
+                        <div class="panel-title">
+                            <svg class="panel-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                            </svg>
+                            <h2>Filter štatistík</h2>
+                        </div>
+                        <span class="filter-info-badge" id="statsFilterInfo">Celý kraj</span>
+                    </div>
+                    
+                    <div class="stats-filters">
+                        <div class="filter-group">
+                            <label class="filter-label">Kraj</label>
+                            <select id="statsFilterRegion" class="filter-select">
+                                <option value="">Banskobystrický kraj</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Okres</label>
+                            <select id="statsFilterDistrict" class="filter-select">
+                                <option value="">Všetky okresy</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label class="filter-label">Obec</label>
+                            <select id="statsFilterMunicipality" class="filter-select">
+                                <option value="">Všetky obce</option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn-primary full-width" id="applyStatsFilter">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polyline points="20 6 9 17 4 12"></polyline>
+                            </svg>
+                            Aplikovať filter
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Charts Grid -->
+                <section class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Rozdelenie rizík podľa úrovne</h3>
+                            <button class="chart-action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="riskDistributionChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Top 10 krízových javov</h3>
+                            <button class="chart-action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="topEventsChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card wide">
+                        <div class="chart-header">
+                            <h3>Riziká podľa okresov</h3>
+                            <button class="chart-action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="districtRisksChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Pravdepodobnosť výskytu</h3>
+                            <button class="chart-action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="probabilityChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3>Ohrozené obyvateľstvo</h3>
+                            <button class="chart-action-btn">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                    <circle cx="12" cy="12" r="1"></circle>
+                                    <circle cx="12" cy="5" r="1"></circle>
+                                    <circle cx="12" cy="19" r="1"></circle>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="populationChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <!-- ========================================
+             VIEW 3: KÓDOVNÍKY
+             ======================================== -->
+        <div id="codelistsView" class="view-container" style="display: none;">
+            <div class="codelists-grid">
+                <div class="codelist-card" id="municipalitiesCard">
+                    <div class="codelist-header">
+                        <div class="codelist-icon municipalities">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                            </svg>
+                        </div>
+                        <div class="codelist-info">
+                            <h3>Obce</h3>
+                            <p class="codelist-count" id="municipalityCount">0 záznamov</p>
+                        </div>
+                    </div>
+                    <button class="codelist-action-btn" onclick="openCodelistModal('municipalityModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Pridať obec
+                    </button>
+                </div>
+                
+                <div class="codelist-card" id="eventsCard">
+                    <div class="codelist-header">
+                        <div class="codelist-icon events">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div class="codelist-info">
+                            <h3>Krízové javy</h3>
+                            <p class="codelist-count" id="eventCount">0 záznamov</p>
+                        </div>
+                    </div>
+                    <button class="codelist-action-btn" onclick="openCodelistModal('eventModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Pridať jav
+                    </button>
+                </div>
+                
+                <div class="codelist-card" id="factorsCard">
+                    <div class="codelist-header">
+                        <div class="codelist-icon factors">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+                                <polyline points="2 17 12 22 22 17"></polyline>
+                                <polyline points="2 12 12 17 22 12"></polyline>
+                            </svg>
+                        </div>
+                        <div class="codelist-info">
+                            <h3>Ohrozujúce faktory</h3>
+                            <p class="codelist-count" id="factorCount">0 záznamov</p>
+                        </div>
+                    </div>
+                    <button class="codelist-action-btn" onclick="openCodelistModal('factorModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Pridať faktor
+                    </button>
+                </div>
+                
+                <div class="codelist-card" id="probabilitiesCard">
+                    <div class="codelist-header">
+                        <div class="codelist-icon probabilities">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <line x1="12" y1="20" x2="12" y2="10"></line>
+                                <line x1="18" y1="20" x2="18" y2="4"></line>
+                                <line x1="6" y1="20" x2="6" y2="16"></line>
+                            </svg>
+                        </div>
+                        <div class="codelist-info">
+                            <h3>Pravdepodobnosti</h3>
+                            <p class="codelist-count" id="probabilityCount">0 záznamov</p>
+                        </div>
+                    </div>
+                    <button class="codelist-action-btn" onclick="openCodelistModal('probabilityModal')">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        Pridať pravdepodobnosť
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Codelist Tables (existing content from original) -->
+            <div class="codelist-tables">
+                <div class="codelist-table-section" id="municipalitiesSection">
+                    <div class="section-header">
+                        <h2>Zoznam obcí</h2>
+                        <div class="section-actions">
+                            <input type="text" placeholder="Hľadať obce..." class="search-input" id="searchMunicipalities">
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="modern-table" id="municipalitiesTable">
+                            <thead>
+                                <tr>
+                                    <th>Kód</th>
+                                    <th>Názov</th>
+                                    <th>Okres</th>
+                                    <th>Kraj</th>
+                                    <th class="actions-cell">Akcie</th>
+                                </tr>
+                            </thead>
+                            <tbody id="municipalitiesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="codelist-table-section" id="eventsSection">
+                    <div class="section-header">
+                        <h2>Zoznam krízových javov</h2>
+                        <div class="section-actions">
+                            <input type="text" placeholder="Hľadať javy..." class="search-input" id="searchEvents">
+                        </div>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="modern-table" id="eventsTable">
+                            <thead>
+                                <tr>
+                                    <th>Kód</th>
+                                    <th>Názov (SK)</th>
+                                    <th>Kategória</th>
+                                    <th class="actions-cell">Akcie</th>
+                                </tr>
+                            </thead>
+                            <tbody id="eventsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="codelist-table-section" id="factorsSection">
+                    <div class="section-header">
+                        <h2>Zoznam ohrozujúcich faktorov</h2>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="modern-table" id="factorsTable">
+                            <thead>
+                                <tr>
+                                    <th>Poradie</th>
+                                    <th>Názov</th>
+                                    <th class="actions-cell">Akcie</th>
+                                </tr>
+                            </thead>
+                            <tbody id="factorsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="codelist-table-section" id="probabilitiesSection">
+                    <div class="section-header">
+                        <h2>Zoznam pravdepodobností</h2>
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="modern-table" id="probabilitiesTable">
+                            <thead>
+                                <tr>
+                                    <th>Poradie</th>
+                                    <th>Interval</th>
+                                    <th>Úroveň rizika</th>
+                                    <th class="actions-cell">Akcie</th>
+                                </tr>
+                            </thead>
+                            <tbody id="probabilitiesTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================
+         MODALS
+         ======================================== -->
+
+    <!-- Record Modal -->
+    <div class="modal" id="recordModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 id="modalTitle">Pridať nový záznam</h2>
+                <button class="modal-close" id="closeModal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="recordForm" class="modal-body">
+                <input type="hidden" id="recordId">
+                
+                <div class="form-section">
+                    <h3 class="section-title">Lokalizácia</h3>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label class="form-label">Obec *</label>
+                            <select id="municipality" required class="form-control">
+                                <option value="">-- Vyberte obec --</option>
+                            </select>
+                            <input type="hidden" id="municipalityCode">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Okres</label>
+                            <input type="text" id="district" readonly class="form-control" placeholder="Automaticky">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Kraj</label>
+                            <input type="text" id="region" readonly class="form-control" placeholder="Automaticky">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3 class="section-title">Charakteristika rizika</h3>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label class="form-label">Krízový jav *</label>
+                            <select id="event" required class="form-control">
+                                <option value="">-- Vyberte krízový jav --</option>
+                            </select>
+                            <input type="hidden" id="eventCode">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Ohrozujúci faktor *</label>
+                            <select id="factor" required class="form-control">
+                                <option value="">-- Vyberte faktor --</option>
+                            </select>
+                            <input type="hidden" id="factorId">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Pravdepodobnosť výskytu *</label>
+                            <select id="probability" required class="form-control">
+                                <option value="">-- Vyberte pravdepodobnosť --</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Úroveň rizika</label>
+                            <select id="riskLevel" class="form-control">
+                                <option value="low">🟢 Nízke</option>
+                                <option value="medium">🟡 Stredné</option>
+                                <option value="high">🟠 Vysoké</option>
+                                <option value="critical">🔴 Kritické</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-section">
+                    <h3 class="section-title">Doplňujúce informácie</h3>
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label class="form-label">Zdroj rizika</label>
+                            <textarea id="riskSource" class="form-control" rows="3" placeholder="Popíšte zdroj rizika..."></textarea>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Ohrozené obyvateľstvo</label>
+                            <input type="number" id="endangeredPopulation" class="form-control" min="0" placeholder="0">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">Ohrozená plocha (km²)</label>
+                            <input type="number" id="endangeredArea" class="form-control" min="0" step="0.01" placeholder="0.00">
+                        </div>
+                        
+                        <div class="form-group full-width">
+                            <label class="form-label">Predpokladaný rozsah narušenia</label>
+                            <textarea id="predictedDisruption" class="form-control" rows="3" placeholder="Popíšte predpokladaný rozsah narušenia..."></textarea>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" id="cancelBtn">Zrušiť</button>
+                    <button type="submit" class="btn-primary">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                        Uložiť záznam
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Export Modal -->
+    <div class="modal" id="exportModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-dialog modal-small">
+            <div class="modal-header">
+                <h2>Export dát</h2>
+                <button class="modal-close" id="closeExportModal">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="export-grid">
+                    <button class="export-card" id="exportExcel">
+                        <div class="export-icon excel">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                            </svg>
+                        </div>
+                        <h3>Excel</h3>
+                        <p>Exportuje všetky dáta do .xlsx súboru</p>
+                    </button>
+                    
+                    <button class="export-card" id="exportPDF">
+                        <div class="export-icon pdf">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                <polyline points="14 2 14 8 20 8"></polyline>
+                                <line x1="16" y1="13" x2="8" y2="13"></line>
+                                <line x1="16" y1="17" x2="8" y2="17"></line>
+                                <polyline points="10 9 9 9 8 9"></polyline>
+                            </svg>
+                        </div>
+                        <h3>PDF</h3>
+                        <p>Vytvorí štruktúrovaný report s grafmi</p>
+                    </button>
+                    
+                    <button class="export-card" id="exportFiltered">
+                        <div class="export-icon filtered">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+                            </svg>
+                        </div>
+                        <h3>Filtrované</h3>
+                        <p>Exportuje len aktuálne filtrované záznamy</p>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Municipality Modal -->
+    <div class="modal" id="municipalityModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 id="municipalityModalTitle">Pridať obec</h2>
+                <button class="modal-close" onclick="closeCodelistModal('municipalityModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="municipalityForm" class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Kód obce *</label>
+                        <input type="text" id="mun_code" required class="form-control" placeholder="508438">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Názov obce *</label>
+                        <input type="text" id="mun_name" required class="form-control" placeholder="Banská Bystrica">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Okres *</label>
+                        <input type="text" id="mun_district" required class="form-control" placeholder="Banská Bystrica">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Kraj *</label>
+                        <input type="text" id="mun_region" required class="form-control" value="Banskobystrický">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" onclick="closeCodelistModal('municipalityModal')">Zrušiť</button>
+                    <button type="submit" class="btn-primary">Uložiť</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Event Modal -->
+    <div class="modal" id="eventModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <h2 id="eventModalTitle">Pridať krízový jav</h2>
+                <button class="modal-close" onclick="closeCodelistModal('eventModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="eventForm" class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Kód javu *</label>
+                        <input type="text" id="event_code" required class="form-control" placeholder="MMD-121">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Názov krízového javu *</label>
+                        <input type="text" id="event_name" required class="form-control" placeholder="Dopravná nehoda - cestná">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Popis</label>
+                        <textarea id="event_description" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" onclick="closeCodelistModal('eventModal')">Zrušiť</button>
+                    <button type="submit" class="btn-primary">Uložiť</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Factor Modal -->
+    <div class="modal" id="factorModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-dialog modal-small">
+            <div class="modal-header">
+                <h2 id="factorModalTitle">Pridať faktor</h2>
+                <button class="modal-close" onclick="closeCodelistModal('factorModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="factorForm" class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label class="form-label">Poradie *</label>
+                        <input type="number" id="factor_order" required class="form-control" placeholder="1" min="1">
+                        <small class="form-help">Poradie zobrazenia v zozname</small>
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Názov faktora *</label>
+                        <input type="text" id="factor_name" required class="form-control" placeholder="voda">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" onclick="closeCodelistModal('factorModal')">Zrušiť</button>
+                    <button type="submit" class="btn-primary">Uložiť</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Probability Modal -->
+    <div class="modal" id="probabilityModal">
+        <div class="modal-backdrop"></div>
+        <div class="modal-dialog modal-small">
+            <div class="modal-header">
+                <h2 id="probabilityModalTitle">Pridať pravdepodobnosť</h2>
+                <button class="modal-close" onclick="closeCodelistModal('probabilityModal')">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            <form id="probabilityForm" class="modal-body">
+                <div class="form-grid">
+                    <div class="form-group full-width">
+                        <label class="form-label">Poradie *</label>
+                        <input type="number" id="prob_order" required class="form-control" placeholder="1" min="1">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Interval *</label>
+                        <input type="text" id="prob_interval" required class="form-control" placeholder="Každé 2 - 3 roky">
+                    </div>
+                    <div class="form-group full-width">
+                        <label class="form-label">Úroveň rizika *</label>
+                        <select id="prob_risk_level" required class="form-control">
+                            <option value="">-- Vyberte --</option>
+                            <option value="critical">🔴 Kritické</option>
+                            <option value="high">🟠 Vysoké</option>
+                            <option value="medium">🟡 Stredné</option>
+                            <option value="low">🟢 Nízke</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-outline" onclick="closeCodelistModal('probabilityModal')">Zrušiť</button>
+                    <button type="submit" class="btn-primary">Uložiť</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="js/app.js"></script>
+    <script>
+        // Mobile menu toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const menuToggle = document.getElementById('menuToggle');
+            const sidebar = document.querySelector('.sidebar');
+            
+            if (menuToggle) {
+                menuToggle.addEventListener('click', function() {
+                    sidebar.classList.toggle('active');
+                });
+            }
+            
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', function(e) {
+                if (window.innerWidth <= 768) {
+                    if (!sidebar.contains(e.target) && !menuToggle.contains(e.target)) {
+                        sidebar.classList.remove('active');
+                    }
+                }
+            });
+            
+            // Update breadcrumb on view change
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    const view = this.getAttribute('data-view');
+                    const breadcrumb = document.getElementById('currentViewTitle');
+                    
+                    const titles = {
+                        'analysis': 'Analýza území',
+                        'statistics': 'Štatistiky',
+                        'codelists': 'Kódovníky'
+                    };
+                    
+                    if (breadcrumb && titles[view]) {
+                        breadcrumb.textContent = titles[view];
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
