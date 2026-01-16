@@ -97,63 +97,83 @@ export async function loadProbabilities() {
  */
 export async function loadTerritories() {
     try {
-        const { data, error } = await supabase
-            .from('territories')
-            .select(`
-                *,
-                municipalities!territories_municipalityCode_fkey (
-                    code,
-                    name,
-                    district,
-                    districtCode,
-                    region,
-                    regionCode,
-                    evidCode,
-                    population
-                ),
-                events!territories_eventCode_fkey (
-                    code,
-                    nameSk,
-                    nameEn,
-                    category,
-                    isCategory,
-                    planType,
-                    ministry,
-                    parentCode
-                ),
-                factors!territories_factorId_fkey (
-                    id,
-                    name,
-                    order
-                )
-            `)
-            .order('importedAt', { ascending: false });
+        let allTerritories = [];
+        let pageSize = 1000;
+        let pageNumber = 0;
+        let hasMore = true;
         
-        if (error) throw error;
+        // Načítaj všetky záznamy s paginaciou (Supabase má limit 1000 na dotaz)
+        while (hasMore) {
+            const from = pageNumber * pageSize;
+            const to = from + pageSize - 1;
+            
+            const { data, error, count } = await supabase
+                .from('territories')
+                .select(`
+                    *,
+                    municipalities!territories_municipalityCode_fkey (
+                        code,
+                        name,
+                        district,
+                        districtCode,
+                        region,
+                        regionCode,
+                        evidCode,
+                        population
+                    ),
+                    events!territories_eventCode_fkey (
+                        code,
+                        nameSk,
+                        nameEn,
+                        category,
+                        isCategory,
+                        planType,
+                        ministry,
+                        parentCode
+                    ),
+                    factors!territories_factorId_fkey (
+                        id,
+                        name,
+                        order
+                    )
+                `, { count: 'exact' })
+                .order('importedAt', { ascending: false })
+                .range(from, to);
+            
+            if (error) throw error;
+            
+            // Transformuj dáta do plochej štruktúry pre jednoduchšie spracovanie
+            const pageData = data.map(territory => ({
+                id: territory.id,
+                municipalityCode: territory.municipalityCode,
+                municipalityName: territory.municipalities?.name || '',
+                district: territory.municipalities?.district || '',
+                region: territory.municipalities?.region || '',
+                eventCode: territory.eventCode,
+                eventName: territory.events?.nameSk || '',
+                factorId: territory.factorId,
+                factorName: territory.factors?.name || '',
+                riskSource: territory.riskSource,
+                probability: territory.probability,
+                riskLevel: territory.riskLevel,
+                endangeredPopulation: territory.endangeredPopulation,
+                endangeredArea: territory.endangeredArea,
+                predictedDisruption: territory.predictedDisruption,
+                importedAt: territory.importedAt,
+                source: territory.source
+            }));
+            
+            allTerritories = allTerritories.concat(pageData);
+            
+            // Skontroluj či sú ešte ďalšie záznamy
+            hasMore = data.length === pageSize;
+            pageNumber++;
+            
+            console.log(`📄 Načítaná strana ${pageNumber}, spolu ${allTerritories.length} záznamov (z ${count} celkom)`);
+        }
         
-        // Transformuj dáta do plochej štruktúry pre jednoduchšie spracovanie
-        const territories = data.map(territory => ({
-            id: territory.id,
-            municipalityCode: territory.municipalityCode,
-            municipalityName: territory.municipalities?.name || '',
-            district: territory.municipalities?.district || '',
-            region: territory.municipalities?.region || '',
-            eventCode: territory.eventCode,
-            eventName: territory.events?.nameSk || '',
-            factorId: territory.factorId,
-            factorName: territory.factors?.name || '',
-            riskSource: territory.riskSource,
-            probability: territory.probability,
-            riskLevel: territory.riskLevel,
-            endangeredPopulation: territory.endangeredPopulation,
-            endangeredArea: territory.endangeredArea,
-            predictedDisruption: territory.predictedDisruption,
-            importedAt: territory.importedAt,
-            source: territory.source
-        }));
-        
-        console.log(`✅ Načítaných ${territories.length} analyzovaných území`);
-        return territories;
+        console.log(`✅ Načítaných ${allTerritories.length} analyzovaných území`);
+        return allTerritories;
     } catch (error) {
         console.error('❌ Chyba pri načítaní území:', error);
         return [];
