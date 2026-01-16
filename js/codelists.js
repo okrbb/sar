@@ -3,7 +3,7 @@
 // Správa kódovníkov pre SAMU aplikáciu
 // ============================================================================
 
-import { supabase } from './config.default.js';
+import { supabase } from './config.js';
 
 // ============================================================================
 // STATE

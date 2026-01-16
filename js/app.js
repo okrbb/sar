@@ -3,7 +3,7 @@
 // Hlavná aplikačná logika s Supabase
 // ============================================================================
 
-import { supabase } from './config.default.js';
+import { supabase } from './config.js';
 import {
     loadMunicipalities,
     loadEvents,
