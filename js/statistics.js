@@ -12,8 +12,10 @@ import { getRiskLabel, getRiskLevel } from './supabase.js';
 
 let statsState = {
     filteredTerritories: [],      // Filtrované územia
+    allTerritories: [],           // VŠETKY územia pre mapu
     statsCache: null,             // Cache pre štatistiky
     chartsInitialized: false,     // Flag či sú grafy už inicializované
+    mapInitialized: false,        // Flag či je mapa inicializovaná
     probabilities: []             // Kódovník pravdepodobností
 };
 
@@ -500,6 +502,11 @@ function initializeStatistics(territories, municipalities, events, probabilities
     
     // Ulož kódovník pravdepodobností do stavu
     statsState.probabilities = probabilities;
+    
+    // Ulož VŠETKY územia pre mapu (len pri prvom volaní)
+    if (statsState.allTerritories.length === 0) {
+        statsState.allTerritories = territories;
+    }
     
     // Inicializuj filtre
     initializeStatsFilters(territories);
@@ -1061,19 +1068,20 @@ let clusterGroup = null;
  * Inicializuje interaktívnu mapu s Leaflet.js
  */
 function initializeRiskMap(territories) {
-    console.log('🗺️ Initializing risk map with', territories.length, 'territories');
-    
     const mapContainer = document.getElementById('riskMapContainer');
     if (!mapContainer) {
         console.warn('⚠️ Risk map container not found');
         return;
     }
     
-    // Destroy existing map if it exists
+    // Ak mapa už existuje, len aktualizuj markery (neinicializuj znova)
     if (riskMap) {
-        riskMap.remove();
-        riskMap = null;
+        console.log('🗺️ Map already initialized, updating markers only');
+        addRiskMarkers(territories, 'all');
+        return;
     }
+    
+    console.log('🗺️ Initializing risk map with', territories.length, 'territories');
     
     // Initialize map centered on Slovakia
     riskMap = L.map('riskMapContainer', {
@@ -1119,7 +1127,7 @@ function initializeRiskMap(territories) {
     }
     
     // Add markers for each territory
-    addRiskMarkers(territories);
+    addRiskMarkers(territories, 'all');
     
     // Add legend
     addMapLegend();
@@ -1133,7 +1141,12 @@ function initializeRiskMap(territories) {
 /**
  * Pridá markery pre každé územie
  */
-function addRiskMarkers(territories) {
+/**
+ * Pridá markery pre každé územie
+ * @param {Array} territories - Filtrované územia
+ * @param {string} activeFilter - Aktívny filter úrovne rizika (all, critical, high, medium, low)
+ */
+function addRiskMarkers(territories, activeFilter = 'all') {
     if (!riskMap) return;
     
     // Group territories by municipality to avoid duplicate markers
@@ -1159,7 +1172,8 @@ function addRiskMarkers(territories) {
             };
         }
         
-        const risk = territory.riskLevel;
+        // DYNAMICKÝ PREPOČET riskLevel z probability pomocou kódovníka
+        const risk = getRiskLevel(territory.probability, statsState.probabilities);
         municipalityData[munCode].territories.push(territory);
         
         if (risk === 'critical') {
@@ -1194,15 +1208,42 @@ function addRiskMarkers(territories) {
             return;
         }
         
-        // Determine overall risk level for municipality
-        let overallRisk = 'low';
-        const avgScore = mun.score / mun.territories.length;
-        if (avgScore >= 7) overallRisk = 'critical';
-        else if (avgScore >= 4) overallRisk = 'high';
-        else if (avgScore >= 2) overallRisk = 'medium';
+        // Určenie farby a počtu podľa AKTÍVNEHO FILTRA
+        let overallRisk;
+        let displayCount;
+        
+        if (activeFilter === 'all') {
+            // Pri "všetky úrovne" zobraz najvyššie riziko
+            if (mun.critical > 0) {
+                overallRisk = 'critical';
+                displayCount = mun.critical;
+            } else if (mun.high > 0) {
+                overallRisk = 'high';
+                displayCount = mun.high;
+            } else if (mun.medium > 0) {
+                overallRisk = 'medium';
+                displayCount = mun.medium;
+            } else {
+                overallRisk = 'low';
+                displayCount = mun.low;
+            }
+        } else {
+            // Pri konkrétnom filtri zobraz len tú úroveň
+            overallRisk = activeFilter;
+            
+            if (activeFilter === 'critical') displayCount = mun.critical;
+            else if (activeFilter === 'high') displayCount = mun.high;
+            else if (activeFilter === 'medium') displayCount = mun.medium;
+            else if (activeFilter === 'low') displayCount = mun.low;
+        }
+        
+        // KRITICKÁ PODMIENKA: Nevytváraj marker ak obec nemá žiadne riziko danej úrovne
+        if (activeFilter !== 'all' && displayCount === 0) {
+            return; // Skip this municipality
+        }
         
         // Create custom icon based on risk level
-        const icon = createRiskIcon(overallRisk, mun.score);
+        const icon = createRiskIcon(overallRisk, displayCount);
         
         // Create marker
         const marker = L.marker([mun.lat, mun.lng], { icon: icon });
@@ -1359,15 +1400,232 @@ function addMapControls(territories) {
     
     controls.addTo(riskMap);
     
-    // Add event listeners after control is added to DOM
-    setTimeout(() => {
-        const resetBtn = document.getElementById('mapZoomReset');
-        if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                riskMap.setView([48.669, 19.699], 8);
-            });
+    // Pridaj event listeners len raz (kontroluj flag)
+    if (!statsState.mapInitialized) {
+        statsState.mapInitialized = true;
+        console.log('🗺️ Adding map event listeners (once)');
+        
+        setTimeout(() => {
+            const resetBtn = document.getElementById('mapZoomReset');
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    riskMap.setView([48.669, 19.699], 8);
+                });
+            }
+            
+            // Add risk level filter listener
+            const riskFilter = document.getElementById('mapRiskFilter');
+            if (riskFilter) {
+                riskFilter.addEventListener('change', (e) => {
+                    const selectedLevel = e.target.value;
+                    console.log('🗺️ Filtering map by risk level:', selectedLevel);
+                    // Použiť allTerritories zo state namiesto parametra
+                    filterMapByRiskLevel(statsState.allTerritories, selectedLevel);
+                });
+            }
+        }, 100);
+    }
+}
+
+/**
+ * Filtruje markery na mape podľa úrovne rizika
+ */
+function filterMapByRiskLevel(allTerritories, riskLevel) {
+    if (!riskMap) return;
+    
+    // ÚPLNÉ VYČISTENIE - odstráň starý cluster group a vytvor nový
+    if (clusterGroup) {
+        riskMap.removeLayer(clusterGroup);
+        clusterGroup.clearLayers();
+    }
+    if (markersLayer) {
+        riskMap.removeLayer(markersLayer);
+        markersLayer.clearLayers();
+    }
+    
+    // Vytvor nový cluster group
+    if (typeof L.markerClusterGroup !== 'undefined') {
+        clusterGroup = L.markerClusterGroup({
+            maxClusterRadius: 50,
+            spiderfyOnMaxZoom: true,
+            showCoverageOnHover: false,
+            zoomToBoundsOnClick: true,
+            iconCreateFunction: function(cluster) {
+                const childCount = cluster.getChildCount();
+                let className = 'marker-cluster marker-cluster-';
+                
+                if (childCount < 10) {
+                    className += 'small';
+                } else if (childCount < 50) {
+                    className += 'medium';
+                } else {
+                    className += 'large';
+                }
+                
+                return L.divIcon({
+                    html: '<div><span>' + childCount + '</span></div>',
+                    className: className,
+                    iconSize: L.point(40, 40)
+                });
+            }
+        });
+    }
+    
+    console.log(`🗺️ Filtering map by: ${riskLevel}`);
+    
+    // NOVÚ LOGIKA: Agreguj VŠETKY územia po obciach, potom filtruj obce
+    const municipalityData = {};
+    
+    // FÁZA 1: Agregácia VŠETKÝCH území po obciach
+    allTerritories.forEach(territory => {
+        const munCode = territory.municipalityCode;
+        
+        if (!municipalityData[munCode]) {
+            municipalityData[munCode] = {
+                name: territory.municipality?.name || 'Neznáma',
+                district: territory.municipality?.district || 'Neznámy',
+                lat: territory.municipality?.latitude || null,
+                lng: territory.municipality?.longitude || null,
+                critical: 0,
+                high: 0,
+                medium: 0,
+                low: 0,
+                score: 0,
+                territories: []
+            };
         }
-    }, 100);
+        
+        // DYNAMICKÝ PREPOČET riskLevel z probability
+        const risk = getRiskLevel(territory.probability, statsState.probabilities);
+        municipalityData[munCode].territories.push(territory);
+        
+        if (risk === 'critical') {
+            municipalityData[munCode].critical++;
+            municipalityData[munCode].score += 10;
+        } else if (risk === 'high') {
+            municipalityData[munCode].high++;
+            municipalityData[munCode].score += 5;
+        } else if (risk === 'medium') {
+            municipalityData[munCode].medium++;
+            municipalityData[munCode].score += 2;
+        } else if (risk === 'low') {
+            municipalityData[munCode].low++;
+            municipalityData[munCode].score += 1;
+        }
+    });
+    
+    // FÁZA 2: Filtruj obce ktoré majú aspoň 1 riziko vybranej úrovne
+    let filteredMunicipalities = Object.values(municipalityData);
+    
+    if (riskLevel !== 'all') {
+        filteredMunicipalities = filteredMunicipalities.filter(mun => {
+            if (riskLevel === 'critical') return mun.critical > 0;
+            if (riskLevel === 'high') return mun.high > 0;
+            if (riskLevel === 'medium') return mun.medium > 0;
+            if (riskLevel === 'low') return mun.low > 0;
+            return false;
+        });
+    }
+    
+    console.log(`🗺️ Showing ${filteredMunicipalities.length} municipalities with ${riskLevel} risk`);
+    
+    // FÁZA 3: Vytvor markery pre filtrované obce
+    createMarkersForMunicipalities(filteredMunicipalities, riskLevel);
+}
+
+/**
+ * Vytvorí markery pre zoznam obcí
+ */
+function createMarkersForMunicipalities(municipalities, activeFilter) {
+    if (!riskMap) return;
+    
+    municipalities.forEach(mun => {
+        // Skip if no coordinates
+        if (!mun.lat || !mun.lng) {
+            return;
+        }
+        
+        // Určenie farby a počtu podľa AKTÍVNEHO FILTRA
+        let overallRisk;
+        let displayCount;
+        
+        if (activeFilter === 'all') {
+            // Pri "všetky úrovne" zobraz najvyššie riziko
+            if (mun.critical > 0) {
+                overallRisk = 'critical';
+                displayCount = mun.critical;
+            } else if (mun.high > 0) {
+                overallRisk = 'high';
+                displayCount = mun.high;
+            } else if (mun.medium > 0) {
+                overallRisk = 'medium';
+                displayCount = mun.medium;
+            } else {
+                overallRisk = 'low';
+                displayCount = mun.low;
+            }
+        } else {
+            // Pri konkrétnom filtri zobraz len tú úroveň
+            overallRisk = activeFilter;
+            
+            if (activeFilter === 'critical') displayCount = mun.critical;
+            else if (activeFilter === 'high') displayCount = mun.high;
+            else if (activeFilter === 'medium') displayCount = mun.medium;
+            else if (activeFilter === 'low') displayCount = mun.low;
+        }
+        
+        // KRITICKÁ PODMIENKA: Nevytváraj marker ak obec nemá žiadne riziko danej úrovne
+        if (activeFilter !== 'all' && displayCount === 0) {
+            return; // Skip this municipality
+        }
+        
+        // Create custom icon
+        const icon = createRiskIcon(overallRisk, displayCount);
+        const marker = L.marker([mun.lat, mun.lng], { icon: icon });
+        
+        // Create popup
+        const popupContent = `
+            <div class="map-popup">
+                <h4>${mun.name}</h4>
+                <p class="popup-district">${mun.district}</p>
+                <div class="popup-score">
+                    <strong>Skóre:</strong> ${mun.score}
+                </div>
+                <div class="popup-risks">
+                    <div class="popup-risk-item">
+                        <span class="risk-dot critical"></span>
+                        <span>Kritické: ${mun.critical}</span>
+                    </div>
+                    <div class="popup-risk-item">
+                        <span class="risk-dot high"></span>
+                        <span>Vysoké: ${mun.high}</span>
+                    </div>
+                    <div class="popup-risk-item">
+                        <span class="risk-dot medium"></span>
+                        <span>Stredné: ${mun.medium}</span>
+                    </div>
+                    <div class="popup-risk-item">
+                        <span class="risk-dot low"></span>
+                        <span>Nízke: ${mun.low}</span>
+                    </div>
+                </div>
+                <div class="popup-total">
+                    <strong>Celkom analýz:</strong> ${mun.territories.length}
+                </div>
+            </div>
+        `;
+        
+        marker.bindPopup(popupContent);
+        
+        if (clusterGroup) {
+            clusterGroup.addLayer(marker);
+        }
+    });
+    
+    // Pridaj cluster group späť na mapu
+    if (clusterGroup) {
+        riskMap.addLayer(clusterGroup);
+    }
 }
 
 // ============================================================================

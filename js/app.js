@@ -839,3 +839,4 @@ function switchView(viewName) {
 
 window.editTerritory = openRecordModal;
 window.deleteTerritoryConfirm = deleteTerritoryConfirm;
+

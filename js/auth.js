@@ -90,25 +90,42 @@ export async function login(email, password, rememberMe) {
 // Logout Function
 // ============================================================================
 export async function logout() {
+    console.log('🚪 Začínam odhlásenie...');
+    
     try {
-        const { error } = await supabase.auth.signOut();
-        if (error) throw error;
+        // Disable logout button immediately to prevent double clicks
+        const logoutBtn = document.getElementById('logoutButton');
+        if (logoutBtn) {
+            logoutBtn.disabled = true;
+            logoutBtn.style.opacity = '0.5';
+            logoutBtn.style.cursor = 'not-allowed';
+        }
         
+        // Sign out from Supabase
+        await supabase.auth.signOut();
+        console.log('✅ Supabase signOut úspešný');
+        
+    } catch (error) {
+        console.error('❌ Logout error:', error);
+        // Continue with logout even if Supabase fails
+    } finally {
+        // Always clear local state and reload
         currentUser = null;
-        appInitialized = false; // Reset flag for next login
+        appInitialized = false;
         
-        // Keep remembered email if checkbox was checked
+        // Clear localStorage
         const rememberMe = localStorage.getItem('autoLogin') === 'true';
         if (!rememberMe) {
             localStorage.removeItem('rememberedEmail');
         }
         localStorage.removeItem('autoLogin');
         
-        showLoginScreen();
+        console.log('✅ Lokálny stav vyčistený, reloadujem...');
         
-    } catch (error) {
-        console.error('Logout error:', error);
-        alert('Chyba pri odhlásení: ' + error.message);
+        // Force reload with timeout
+        setTimeout(() => {
+            window.location.href = window.location.href;
+        }, 100);
     }
 }
 
@@ -253,14 +270,15 @@ export function setupAuthListeners() {
         });
     }
     
-    // Logout button
-    const logoutButton = document.getElementById('logoutButton');
-    if (logoutButton) {
-        logoutButton.addEventListener('click', async (e) => {
+    // Logout button - použiť delegáciu eventov
+    document.addEventListener('click', async (e) => {
+        if (e.target && (e.target.id === 'logoutButton' || e.target.closest('#logoutButton'))) {
             e.preventDefault();
+            e.stopPropagation();
+            console.log('🚪 Logout button kliknutý');
             await logout();
-        });
-    }
+        }
+    });
     
     // Enter key on password field
     const passwordField = document.getElementById('loginPassword');

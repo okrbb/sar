@@ -7,11 +7,17 @@
    CSS VARIABLES & DESIGN TOKENS
    ============================================================================ */
 :root {
-    /* Color Palette - 2026 Modern */
-    --color-primary: #6366f1;
-    --color-primary-light: #818cf8;
-    --color-primary-dark: #4f46e5;
-    --color-primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    /* Color Palette - Based on SAMU Logo */
+    --color-primary: #02377f;        /* Logo dark blue */
+    --color-primary-light: #0a4fa3;  /* Lighter blue */
+    --color-primary-dark: #012863;   /* Darker blue */
+    --color-primary-gradient: linear-gradient(135deg, #02377f 0%, #0a4fa3 100%);
+    
+    /* Accent Color from Logo */
+    --color-accent: #ffaa01;         /* Logo orange/gold */
+    --color-accent-light: #ffbb33;
+    --color-accent-dark: #e69900;
+    --color-accent-gradient: linear-gradient(135deg, #ffaa01 0%, #ff8800 100%);
     
     /* Risk Colors with Gradients */
     --color-critical: #ef4444;
@@ -175,40 +181,22 @@ body {
 }
 
 .logo-icon {
-    width: 48px;
-    height: 48px;
-    background: var(--color-primary-gradient);
-    border-radius: var(--radius-xl);
+    width: 56px;
+    height: 56px;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--shadow-glow);
     position: relative;
-    overflow: hidden;
-}
-
-.logo-icon::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-    animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-    0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-    100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
 }
 
 .logo-img {
-    width: 32px;
-    height: 32px;
+    width: 56px;
+    height: 56px;
     object-fit: contain;
     position: relative;
     z-index: 1;
+    filter: none;
 }
 
 .logo-text h1 {
@@ -519,6 +507,7 @@ body {
 }
 
 .btn-primary:hover {
+    background: var(--color-accent-gradient);
     transform: translateY(-2px);
     box-shadow: var(--shadow-xl), var(--shadow-glow);
 }
@@ -554,7 +543,7 @@ body {
 
 .btn-secondary:hover {
     background: var(--color-surface-hover);
-    border-color: var(--color-primary);
+    border-color: var(--color-accent-light);
     transform: translateY(-2px);
 }
 
@@ -580,7 +569,7 @@ body {
 }
 
 .btn-outline:hover {
-    border-color: var(--color-primary);
+    border-color: var(--color-accent-light);
     color: var(--color-text);
     background: var(--color-surface);
 }
@@ -1096,7 +1085,7 @@ body {
 }
 
 .action-btn:hover {
-    background: var(--color-surface-hover);
+    background: var(--color-accent-gradient);
     border-color: var(--color-primary);
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
@@ -1116,7 +1105,7 @@ body {
 
 .action-btn.edit:hover {
     border-color: var(--color-primary);
-    background: rgba(99, 102, 241, 0.1);
+    background: var(--color-accent-gradient);
 }
 
 .action-btn.edit:hover svg {
@@ -1855,7 +1844,7 @@ textarea.form-control {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #02377f 0%, #0a4fa3 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1916,21 +1905,20 @@ textarea.form-control {
 }
 
 .login-logo {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     margin: 0 auto 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px;
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
 }
 
 .login-logo-img {
-    width: 48px;
-    height: 48px;
-    filter: brightness(0) invert(1);
+    width: 140px;
+    height: 140px;
+    filter: none;
+    object-fit: contain;
 }
 
 .login-title {
@@ -2000,7 +1988,7 @@ textarea.form-control {
     width: 18px;
     height: 18px;
     stroke-width: 2;
-    color: #667eea;
+    color: #02377f;
 }
 
 .form-input {
@@ -2017,7 +2005,7 @@ textarea.form-control {
 
 .form-input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #02377f;
     box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
 }
 
@@ -2058,8 +2046,8 @@ textarea.form-control {
 }
 
 .checkbox-input:checked ~ .checkbox-custom {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-color: #667eea;
+    background: linear-gradient(135deg, #02377f 0%, #0a4fa3 100%);
+    border-color: #02377f;
 }
 
 .checkbox-input:checked ~ .checkbox-custom::after {
@@ -2083,7 +2071,7 @@ textarea.form-control {
 .login-button {
     width: 100%;
     padding: 16px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #02377f 0%, #0a4fa3 100%);
     color: white;
     border: none;
     border-radius: 12px;
@@ -2100,6 +2088,7 @@ textarea.form-control {
 }
 
 .login-button:hover {
+    background: var(--color-accent-gradient);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
 }
@@ -2186,7 +2175,7 @@ textarea.form-control {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #02377f 0%, #0a4fa3 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2228,7 +2217,7 @@ textarea.form-control {
 }
 
 .logout-button:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--color-accent-gradient);
 }
 
 /* Circular logout button (replaces avatar) */
@@ -2236,7 +2225,7 @@ textarea.form-control {
     width: 36px;
     height: 36px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #02377f 0%, #0a4fa3 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2248,7 +2237,7 @@ textarea.form-control {
 }
 
 .logout-button-circle:hover {
-    background: linear-gradient(135deg, #5568d3 0%, #653a8b 100%);
+    background: var(--color-accent-gradient);
     transform: scale(1.05);
 }
 
@@ -2541,23 +2530,31 @@ textarea.form-control {
 }
 
 .map-filter-select {
-    padding: 6px 12px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
-    color: white;
-    font-size: 13px;
+    padding: var(--space-3) var(--space-4);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    color: var(--color-text);
+    font-size: 0.875rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all var(--transition-base);
 }
 
 .map-filter-select:hover {
-    background: rgba(255, 255, 255, 0.15);
+    border-color: var(--color-primary);
+    background: var(--color-surface-hover);
 }
 
 .map-filter-select:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(2, 55, 127, 0.1);
+}
+
+.map-filter-select option {
+    background: var(--color-bg-light);
+    color: var(--color-text);
+    padding: var(--space-2);
 }
 
 .map-control-btn {
