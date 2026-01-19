@@ -19,6 +19,13 @@ import {
 
 import { initializeStatistics } from './statistics.js';
 import { initializeCodelists } from './codelists.js';
+import {
+    exportToExcel,
+    exportFilteredToExcel,
+    exportToPDF,
+    showExportLoading,
+    hideExportLoading
+} from './export.js';
 
 // ============================================================================
 // STATE MANAGEMENT
@@ -85,7 +92,9 @@ export async function initializeApp() {
         
         // Načítaj analyzované územia
         console.log('📥 Načítavam analyzované územia...');
-        appState.territories = await loadTerritories();
+        appState.territories = await loadTerritories((percent, loaded, total) => {
+            showLoading(true, percent, loaded, total);
+        });
         appState.filteredTerritories = [...appState.territories].sort((a, b) => 
             a.municipalityName.localeCompare(b.municipalityName, 'sk')
         );
@@ -116,16 +125,26 @@ export async function initializeApp() {
 // LOADING STATE
 // ============================================================================
 
-function showLoading(show) {
+function showLoading(show, percent = 0, loaded = 0, total = 0) {
     appState.isLoading = show;
     const tableBody = document.getElementById('tableBody');
     
     if (show) {
+        let message = 'Načítavam dáta...';
+        if (percent > 0 && total > 0) {
+            message = `Načítavam dáta... ${percent}% (${loaded.toLocaleString('sk-SK')} / ${total.toLocaleString('sk-SK')})`;
+        }
+        
         tableBody.innerHTML = `
             <tr>
                 <td colspan="8" style="text-align: center; padding: 3rem;">
                     <div class="loading"></div>
-                    <p style="margin-top: 1rem; color: var(--gray-600);">Načítavam dáta...</p>
+                    <p style="margin-top: 1rem; color: var(--gray-600); font-weight: 500;">${message}</p>
+                    ${percent > 0 ? `
+                        <div style="max-width: 400px; margin: 1rem auto; background: #e5e7eb; border-radius: 10px; height: 8px; overflow: hidden;">
+                            <div style="width: ${percent}%; height: 100%; background: linear-gradient(90deg, #2980b9, #3498db); transition: width 0.3s ease;"></div>
+                        </div>
+                    ` : ''}
                 </td>
             </tr>
         `;
@@ -587,7 +606,9 @@ async function handleFormSubmit(e) {
         document.getElementById('recordForm').reset();
         
         // Refresh data - znovu nacitaj vsetko z DB
-        appState.territories = await loadTerritories();
+        appState.territories = await loadTerritories((percent, loaded, total) => {
+            showLoading(true, percent, loaded, total);
+        });
         
         // Znovu aplikuj aktualne filtre (aby sa zachovali)
         applyFilters();
@@ -628,7 +649,9 @@ async function deleteTerritoryConfirm(territoryId) {
         await deleteTerritory(territoryId);
         
         // Refresh data - znovu nacitaj vsetko z DB
-        appState.territories = await loadTerritories();
+        appState.territories = await loadTerritories((percent, loaded, total) => {
+            showLoading(true, percent, loaded, total);
+        });
         
         // Znovu aplikuj aktualne filtre (aby sa zachovali)
         applyFilters();
@@ -693,16 +716,62 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('closeExportModal').addEventListener('click', () => closeModal('exportModal'));
     
     // Export buttons
-    document.getElementById('exportExcel').addEventListener('click', () => {
-        alert('Export do Excel bude implementovaný neskôr.');
+    document.getElementById('exportExcel').addEventListener('click', async () => {
+        try {
+            closeModal('exportModal');
+            showExportLoading('Exportujem do Excel...');
+            
+            await exportToExcel(
+                appState.territories,
+                appState.municipalities,
+                appState.events,
+                appState.factors
+            );
+            
+            hideExportLoading();
+        } catch (error) {
+            hideExportLoading();
+            alert('Chyba pri exporte do Excel: ' + error.message);
+        }
     });
     
-    document.getElementById('exportPDF').addEventListener('click', () => {
-        alert('Export do PDF bude implementovaný neskôr.');
+    document.getElementById('exportPDF').addEventListener('click', async () => {
+        try {
+            closeModal('exportModal');
+            showExportLoading('Vytváram PDF report...');
+            
+            await exportToPDF(
+                appState.territories,
+                appState.municipalities,
+                appState.events,
+                appState.factors
+            );
+            
+            hideExportLoading();
+        } catch (error) {
+            hideExportLoading();
+            alert('Chyba pri exporte do PDF: ' + error.message);
+        }
     });
     
-    document.getElementById('exportFiltered').addEventListener('click', () => {
-        alert('Export filtrovaných záznamov bude implementovaný neskôr.');
+    document.getElementById('exportFiltered').addEventListener('click', async () => {
+        try {
+            closeModal('exportModal');
+            
+            if (appState.filteredTerritories.length === 0) {
+                alert('Nie sú žiadne záznamy na export. Skúste zmeniť filtre.');
+                return;
+            }
+            
+            showExportLoading(`Exportujem ${appState.filteredTerritories.length} filtrovaných záznamov...`);
+            
+            await exportFilteredToExcel(appState.filteredTerritories, appState.filters);
+            
+            hideExportLoading();
+        } catch (error) {
+            hideExportLoading();
+            alert('Chyba pri exporte filtrovaných dát: ' + error.message);
+        }
     });
 
     // Navigation between views

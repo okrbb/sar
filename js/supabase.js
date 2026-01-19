@@ -118,8 +118,9 @@ export async function loadProbabilities() {
 
 /**
  * Načíta všetky analyzované územia s JOIN na všetky potrebné tabuľky
+ * @param {Function} progressCallback - Voliteľný callback pre zobrazenie progressu (percent, loaded, total)
  */
-export async function loadTerritories() {
+export async function loadTerritories(progressCallback = null) {
     try {
         let allTerritories = [];
         let pageSize = 1000;
@@ -206,6 +207,12 @@ export async function loadTerritories() {
             // Skontroluj či sú ešte ďalšie záznamy
             hasMore = data.length === pageSize;
             pageNumber++;
+            
+            // Volaj progress callback ak existuje
+            if (progressCallback && count) {
+                const percent = Math.round((allTerritories.length / count) * 100);
+                progressCallback(percent, allTerritories.length, count);
+            }
             
             console.log(`📄 Načítaná strana ${pageNumber}, spolu ${allTerritories.length} záznamov (z ${count} celkom)`);
         }
