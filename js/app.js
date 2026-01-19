@@ -58,7 +58,7 @@ let appState = {
 // INICIALIZÁCIA APLIKÁCIE
 // ============================================================================
 
-async function initializeApp() {
+export async function initializeApp() {
     console.log('🚀 Inicializujem aplikáciu SAMU...');
     
     try {
@@ -654,8 +654,8 @@ async function deleteTerritoryConfirm(territoryId) {
 // ============================================================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize app
-    initializeApp();
+    // Note: initializeApp() is now called from auth.js after successful login
+    // to ensure data is loaded only when user is authenticated
     
     // Municipality change handler
     document.getElementById('municipality').addEventListener('change', function() {
@@ -770,4 +770,3 @@ function switchView(viewName) {
 
 window.editTerritory = openRecordModal;
 window.deleteTerritoryConfirm = deleteTerritoryConfirm;
-

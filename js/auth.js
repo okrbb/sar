@@ -3,9 +3,11 @@
 // ============================================================================
 
 import { supabase } from './config.js';
+import { initializeApp } from './app.js';
 
 // Authentication state
 let currentUser = null;
+let appInitialized = false; // Flag to prevent double initialization
 
 // ============================================================================
 // Initialize Authentication
@@ -93,6 +95,7 @@ export async function logout() {
         if (error) throw error;
         
         currentUser = null;
+        appInitialized = false; // Reset flag for next login
         
         // Keep remembered email if checkbox was checked
         const rememberMe = localStorage.getItem('autoLogin') === 'true';
@@ -178,6 +181,12 @@ async function handleAuthSuccess() {
     toggleAdminFeatures(adminStatus);
     
     console.log('✅ User authenticated:', userEmail);
+    
+    // Initialize app data after login (only once)
+    if (!appInitialized) {
+        appInitialized = true;
+        await initializeApp();
+    }
 }
 
 function toggleAdminFeatures(isAdminUser) {
