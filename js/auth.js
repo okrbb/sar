@@ -92,41 +92,56 @@ export async function login(email, password, rememberMe) {
 export async function logout() {
     console.log('🚪 Začínam odhlásenie...');
     
-    try {
-        // Disable logout button immediately to prevent double clicks
-        const logoutBtn = document.getElementById('logoutButton');
-        if (logoutBtn) {
-            logoutBtn.disabled = true;
-            logoutBtn.style.opacity = '0.5';
-            logoutBtn.style.cursor = 'not-allowed';
-        }
-        
-        // Sign out from Supabase
-        await supabase.auth.signOut();
-        console.log('✅ Supabase signOut úspešný');
-        
-    } catch (error) {
-        console.error('❌ Logout error:', error);
-        // Continue with logout even if Supabase fails
-    } finally {
-        // Always clear local state and reload
-        currentUser = null;
-        appInitialized = false;
-        
-        // Clear localStorage
-        const rememberMe = localStorage.getItem('autoLogin') === 'true';
-        if (!rememberMe) {
-            localStorage.removeItem('rememberedEmail');
-        }
-        localStorage.removeItem('autoLogin');
-        
-        console.log('✅ Lokálny stav vyčistený, reloadujem...');
-        
-        // Force reload with timeout
-        setTimeout(() => {
-            window.location.href = window.location.href;
-        }, 100);
+    // Disable logout button immediately to prevent double clicks
+    const logoutBtn = document.getElementById('logoutButton');
+    if (logoutBtn) {
+        logoutBtn.disabled = true;
+        logoutBtn.style.opacity = '0.5';
+        logoutBtn.style.cursor = 'not-allowed';
     }
+    
+    // Set a deadline - if signOut doesn't complete in 2 seconds, force reload
+    const LOGOUT_TIMEOUT_MS = 2000;
+    let timeoutReached = false;
+    
+    const timeoutPromise = new Promise((resolve) => {
+        setTimeout(() => {
+            timeoutReached = true;
+            console.warn('⚠️ Supabase signOut timeout - forcujem reload');
+            resolve();
+        }, LOGOUT_TIMEOUT_MS);
+    });
+    
+    const signOutPromise = supabase.auth.signOut()
+        .then(() => {
+            if (!timeoutReached) {
+                console.log('✅ Supabase signOut úspešný');
+            }
+        })
+        .catch((error) => {
+            if (!timeoutReached) {
+                console.error('❌ Supabase signOut error:', error.message);
+            }
+        });
+    
+    // Race: whoever finishes first (signOut or timeout) triggers cleanup
+    await Promise.race([signOutPromise, timeoutPromise]);
+    
+    // Always clear local state and reload (regardless of Supabase response)
+    currentUser = null;
+    appInitialized = false;
+    
+    // Clear localStorage (preserve rememberedEmail if user had it checked)
+    const rememberMe = localStorage.getItem('autoLogin') === 'true';
+    if (!rememberMe) {
+        localStorage.removeItem('rememberedEmail');
+    }
+    localStorage.removeItem('autoLogin');
+    
+    console.log('✅ Lokálny stav vyčistený, reloadujem...');
+    
+    // Force reload immediately (no setTimeout needed)
+    window.location.reload();
 }
 
 // ============================================================================
@@ -270,15 +285,16 @@ export function setupAuthListeners() {
         });
     }
     
-    // Logout button - použiť delegáciu eventov
-    document.addEventListener('click', async (e) => {
-        if (e.target && (e.target.id === 'logoutButton' || e.target.closest('#logoutButton'))) {
+    // Logout button - direct event listener (more reliable than delegation)
+    const logoutBtn = document.getElementById('logoutButton');
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', async (e) => {
             e.preventDefault();
             e.stopPropagation();
             console.log('🚪 Logout button kliknutý');
             await logout();
-        }
-    });
+        });
+    }
     
     // Enter key on password field
     const passwordField = document.getElementById('loginPassword');

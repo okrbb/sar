@@ -19,6 +19,7 @@ import {
 
 import { initializeStatistics } from './statistics.js';
 import { initializeCodelists } from './codelists.js';
+import { initializeNotifications, requestNotificationPermission, createNotification } from './notifications.js';
 import {
     exportToExcel,
     exportFilteredToExcel,
@@ -105,6 +106,13 @@ export async function initializeApp() {
         
         // Inicializuj kódovníky
         initializeCodelists(municipalities, events, factors, probabilities);
+        
+        // Inicializuj notifikácie
+        console.log('🔔 Inicializujem notifikácie...');
+        await initializeNotifications();
+        
+        // Request notification permission if not granted
+        requestNotificationPermission();
         
         console.log('✅ Aplikácia úspešne inicializovaná!');
         console.log(`   - Obce: ${municipalities.length}`);
@@ -621,9 +629,31 @@ async function handleFormSubmit(e) {
         
         // Zobraz uspesnu spravu AZ PO obnoveni tabulky
         if (appState.editingTerritoryId) {
-            alert('Záznam úspešne aktualizovaný!');
+            
+            // Vytvor notifikáciu o aktualizácii
+            await createNotification(
+                'RISK_UPDATE',
+                'Riziko aktualizované',
+                `Riziko v obci ${territoryData.municipalityName} bolo aktualizované`,
+                {
+                    municipality: territoryData.municipalityName,
+                    event: territoryData.eventName,
+                    riskLevel: territoryData.riskLevel
+                }
+            );
         } else {
-            alert('Záznam úspešne vytvorený!');
+            
+            // Vytvor notifikáciu o novom riziku
+            await createNotification(
+                'NEW_RISK',
+                'Nové riziko pridané',
+                `Pridané ${getRiskLabel(territoryData.riskLevel)} riziko v obci ${territoryData.municipalityName} - ${territoryData.eventName}`,
+                {
+                    municipality: territoryData.municipalityName,
+                    event: territoryData.eventName,
+                    riskLevel: territoryData.riskLevel
+                }
+            );
         }
         
     } catch (error) {
@@ -641,6 +671,9 @@ async function deleteTerritoryConfirm(territoryId) {
     if (!confirm('Naozaj chcete zmazať tento záznam?')) {
         return;
     }
+    
+    // Najdi územie pred zmazaním (aby sme mali údaje pre notifikáciu)
+    const territory = appState.territories.find(t => t.id === territoryId);
     
     try {
         // Zobraz loading
@@ -662,8 +695,18 @@ async function deleteTerritoryConfirm(territoryId) {
         // Skry loading
         showLoading(false);
         
-        // Zobraz uspesnu spravu AZ PO obnoveni tabulky
-        alert('Záznam úspešne zmazaný!');
+        // Vytvor notifikáciu o zmazaní
+        if (territory) {
+            await createNotification(
+                'RISK_DELETED',
+                'Riziko odstránené',
+                `Riziko v obci ${territory.municipalityName} - ${territory.eventName} bolo odstránené`,
+                {
+                    municipality: territory.municipalityName,
+                    event: territory.eventName
+                }
+            );
+        }
         
     } catch (error) {
         showLoading(false);

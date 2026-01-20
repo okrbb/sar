@@ -629,6 +629,10 @@ function setupStatsFilterListeners(territories) {
     document.getElementById('applyStatsFilter')?.addEventListener('click', function() {
         applyStatsFilter(territories);
     });
+    
+    document.getElementById('resetStatsFilter')?.addEventListener('click', function() {
+        resetStatsFilter(territories);
+    });
 }
 
 function applyStatsFilter(territories) {
@@ -662,6 +666,29 @@ function applyStatsFilter(territories) {
     
     // Aktualizuj štatistiky
     updateStatistics();
+}
+
+function resetStatsFilter(territories) {
+    // Reset dropdown values
+    const districtSelect = document.getElementById('statsFilterDistrict');
+    const municipalitySelect = document.getElementById('statsFilterMunicipality');
+    
+    if (districtSelect) districtSelect.value = '';
+    if (municipalitySelect) municipalitySelect.value = '';
+    
+    // Reset filtered territories to all territories
+    statsState.filteredTerritories = [...territories];
+    
+    // Update info badge
+    const filterInfo = document.getElementById('statsFilterInfo');
+    if (filterInfo) {
+        filterInfo.textContent = 'Celý kraj';
+    }
+    
+    // Update statistics
+    updateStatistics();
+    
+    console.log('✅ Filter resetnutý');
 }
 
 // REMOVED - resetStatsFilter is no longer needed with the new simple filter design

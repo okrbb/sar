@@ -226,13 +226,26 @@ export async function loadTerritories(progressCallback = null) {
 }
 
 /**
+ * Generuje jedinečné ID pre nové územie
+ */
+function generateTerritoryId() {
+    // Formát: territory_XXXXX kde XXXXX je 5-ciferné náhodné číslo
+    const randomNum = Math.floor(Math.random() * 99999).toString().padStart(5, '0');
+    return `territory_${randomNum}`;
+}
+
+/**
  * Vytvorí nové analyzované územie
  */
 export async function createTerritory(territoryData) {
     try {
+        // Generuj jedinečné ID
+        const territoryId = generateTerritoryId();
+        
         const { data, error } = await supabase
             .from('territories')
             .insert([{
+                id: territoryId,  // Pridané ID
                 municipalityCode: territoryData.municipalityCode,
                 eventCode: territoryData.eventCode,
                 factorId: territoryData.factorId,
