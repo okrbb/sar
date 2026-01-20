@@ -2991,13 +2991,17 @@ textarea.form-control {
 
 .notification-message {
     font-size: 0.8125rem;
-    color: var(--color-text-secondary);
+    color: #cbd5e1;
     line-height: 1.4;
     margin-bottom: var(--space-2);
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
+    
+    /* Moderná syntax (CSS Overflow Module Level 3) */
     overflow: hidden;
+    text-overflow: ellipsis;
+    line-clamp: 2;
+    -webkit-line-clamp: 2; /* Safari fallback */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
 }
 
 .notification-time {
