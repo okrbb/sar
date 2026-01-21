@@ -544,6 +544,10 @@ function openRecordModal(territoryId = null) {
             document.getElementById('endangeredPopulation').value = territory.endangeredPopulation || '';
             document.getElementById('endangeredArea').value = territory.endangeredArea || '';
             document.getElementById('predictedDisruption').value = territory.predictedDisruption || '';
+            document.getElementById('probabilityLevel').value = territory.probabilityLevel || '';
+            document.getElementById('predictedDisruption2').value = territory.predictedDisruption2 || '';
+            document.getElementById('predictedDisruption3').value = territory.predictedDisruption3 || '';
+            document.getElementById('possibleOverlap').value = territory.possibleOverlap || '';
             
             // DYNAMICKY NASTAVIŤ ÚROVEŇ RIZIKA z pravdepodobnosti
             const riskLevel = getRiskLevel(territory.probability, appState.probabilities);
@@ -593,6 +597,10 @@ async function handleFormSubmit(e) {
         endangeredPopulation: parseInt(document.getElementById('endangeredPopulation').value) || 0,
         endangeredArea: parseFloat(document.getElementById('endangeredArea').value) || 0,
         predictedDisruption: document.getElementById('predictedDisruption').value,
+        probabilityLevel: parseInt(document.getElementById('probabilityLevel').value) || null,
+        predictedDisruption2: document.getElementById('predictedDisruption2').value,
+        predictedDisruption3: document.getElementById('predictedDisruption3').value,
+        possibleOverlap: document.getElementById('possibleOverlap').value,
         riskLevel: getRiskLevel(probability, appState.probabilities)
     };
     
