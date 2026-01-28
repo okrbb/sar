@@ -2531,9 +2531,6 @@ textarea.form-control {
         font-size: 14px;
     }
 }
-        font-size: 14px;
-    }
-}
 
 /* Hide main app when login screen is visible */
 #mainApp {
@@ -3425,4 +3422,40 @@ textarea.form-control {
         width: calc(100vw - 40px);
         right: -20px;
     }
+}
+
+/* ============================================================================
+   CLUSTER MODIFIERS - Farby zhlukov podľa filtrovaného rizika
+   ============================================================================ */
+
+/* Kritické - Červená */
+.marker-cluster-risk-critical {
+    background-color: rgba(239, 68, 68, 0.6);
+}
+.marker-cluster-risk-critical div {
+    background-color: rgba(239, 68, 68, 0.8);
+}
+
+/* Vysoké - Oranžová */
+.marker-cluster-risk-high {
+    background-color: rgba(249, 115, 22, 0.6);
+}
+.marker-cluster-risk-high div {
+    background-color: rgba(249, 115, 22, 0.8);
+}
+
+/* Stredné - Žltá */
+.marker-cluster-risk-medium {
+    background-color: rgba(234, 179, 8, 0.6);
+}
+.marker-cluster-risk-medium div {
+    background-color: rgba(234, 179, 8, 0.8);
+}
+
+/* Nízke - Zelená */
+.marker-cluster-risk-low {
+    background-color: rgba(34, 197, 94, 0.6);
+}
+.marker-cluster-risk-low div {
+    background-color: rgba(34, 197, 94, 0.8);
 }

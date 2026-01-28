@@ -1479,15 +1479,23 @@ function filterMapByRiskLevel(allTerritories, riskLevel) {
             zoomToBoundsOnClick: true,
             iconCreateFunction: function(cluster) {
                 const childCount = cluster.getChildCount();
-                let className = 'marker-cluster marker-cluster-';
+                let className = 'marker-cluster '; // Zmena: základná trieda + medzera
                 
-                if (childCount < 10) {
-                    className += 'small';
-                } else if (childCount < 50) {
-                    className += 'medium';
+                // --- NOVÁ LOGIKA ---
+                // Ak je vybraný konkrétny filter (nie 'all'), vynútime farbu podľa rizika
+                if (riskLevel !== 'all') {
+                    className += `marker-cluster-risk-${riskLevel}`;
                 } else {
-                    className += 'large';
+                    // Pôvodná logika podľa veľkosti (len pre 'all')
+                    if (childCount < 10) {
+                        className += 'marker-cluster-small';
+                    } else if (childCount < 50) {
+                        className += 'marker-cluster-medium';
+                    } else {
+                        className += 'marker-cluster-large';
+                    }
                 }
+                // -------------------
                 
                 return L.divIcon({
                     html: '<div><span>' + childCount + '</span></div>',
