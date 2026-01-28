@@ -32,8 +32,8 @@ let charts = {
     events: null,
     districts: null,
     probability: null,
-    factors: null,
-    // trend: null  // REMOVED - not needed
+    radar: null,   
+    trend: null
 };
 
 // ============================================================================
@@ -103,6 +103,17 @@ function calculateStatistics(territories) {
         stats.totalPopulation += territory.endangeredPopulation || 0;
         stats.totalArea += territory.endangeredArea || 0;
     });
+
+    // 1. Výpočet Risk Score (Vážený priemer)
+    // Váhy: Kritické=10, Vysoké=5, Stredné=2, Nízke=1
+    let totalScore = 0;
+    totalScore += stats.riskLevels.critical * 10;
+    totalScore += stats.riskLevels.high * 5;
+    totalScore += stats.riskLevels.medium * 2;
+    totalScore += stats.riskLevels.low * 1;
+    
+    // Normalizované skóre (priemer na 1 udalosť)
+    stats.riskScore = territories.length > 0 ? (totalScore / territories.length).toFixed(1) : 0;
     
     return stats;
 }
@@ -286,18 +297,13 @@ function createEventsChart(stats) {
 
 function createDistrictsChart(stats) {
     const canvas = document.getElementById('districtRisksChart');
-    if (!canvas || !canvas.getContext) {
-        console.error('Canvas element districtRisksChart not found or not a canvas');
-        return;
-    }
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     
     const sorted = Object.entries(stats.districts)
         .sort((a, b) => b[1].total - a[1].total);
     
-    if (charts.districts) {
-        charts.districts.destroy();
-    }
+    if (charts.districts) charts.districts.destroy();
     
     charts.districts = new Chart(ctx, {
         type: 'pie',
@@ -306,33 +312,49 @@ function createDistrictsChart(stats) {
             datasets: [{
                 data: sorted.map(([, data]) => data.total),
                 backgroundColor: [
-                    'rgba(59, 130, 246, 0.8)',
-                    'rgba(16, 185, 129, 0.8)',
-                    'rgba(245, 158, 11, 0.8)',
-                    'rgba(239, 68, 68, 0.8)',
-                    'rgba(139, 92, 246, 0.8)',
-                    'rgba(236, 72, 153, 0.8)',
-                    'rgba(20, 184, 166, 0.8)',
-                    'rgba(251, 146, 60, 0.8)',
-                    'rgba(34, 211, 238, 0.8)',
-                    'rgba(248, 113, 113, 0.8)',
-                    'rgba(192, 132, 252, 0.8)',
-                    'rgba(251, 191, 36, 0.8)',
-                    'rgba(134, 239, 172, 0.8)'
-                ]
+                    'rgba(59, 130, 246, 0.8)', 'rgba(16, 185, 129, 0.8)', 'rgba(245, 158, 11, 0.8)',
+                    'rgba(239, 68, 68, 0.8)', 'rgba(139, 92, 246, 0.8)', 'rgba(236, 72, 153, 0.8)'
+                ],
+                borderWidth: 1,
+                borderColor: '#1e293b'
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'right',
-                    labels: {
-                        font: { size: 12 },
-                        padding: 10
+            // --- NOVÉ: INTERAKTIVITA ---
+            onClick: (e, elements) => {
+                if (elements.length > 0) {
+                    const index = elements[0].index;
+                    const districtName = charts.districts.data.labels[index];
+                    
+                    // 1. Nájdi filter v UI
+                    const districtSelect = document.getElementById('statsFilterDistrict');
+                    if(districtSelect) {
+                        districtSelect.value = districtName;
+                        // 2. Vyvolaj zmenu (ako keby užívateľ klikol)
+                        // Poznámka: Musíme manuálne zavolať applyStatsFilter, lebo 'change' event sa nemusí chytiť
+                        const territories = statsState.allTerritories; // Použi globálny stav
+                        
+                        // Zaktualizuj filter obce na 'všetky'
+                        const municipalitySelect = document.getElementById('statsFilterMunicipality');
+                        if(municipalitySelect) municipalitySelect.value = '';
+
+                        // Aplikuj filter
+                        // Tu musíme zavolať tvoju existujúcu logiku filtrovania
+                        document.getElementById('applyStatsFilter').click();
+                        
+                        // Vizuálna odozva - scrollni hore k filtrom
+                        document.querySelector('.stats-filter-panel').scrollIntoView({ behavior: 'smooth' });
                     }
                 }
+            },
+            onHover: (event, chartElement) => {
+                event.native.target.style.cursor = chartElement[0] ? 'pointer' : 'default';
+            },
+            // ---------------------------
+            plugins: {
+                legend: { position: 'right', labels: { color: '#9CA3AF', padding: 10 } }
             }
         }
     });
@@ -443,6 +465,54 @@ function createFactorsChart(stats) {
     });
 }
 
+function createVulnerabilityRadar(stats) {
+    const canvas = document.getElementById('vulnerabilityRadarChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    // Zoberieme TOP 5 najčastejších javov pre radar
+    const sortedEvents = Object.entries(stats.events)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 6); // Top 6
+
+    if (charts.radar) charts.radar.destroy();
+
+    charts.radar = new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: sortedEvents.map(([name]) => name.substring(0, 15) + '...'), // Skrátené názvy
+            datasets: [{
+                label: 'Profil rizika',
+                data: sortedEvents.map(([, count]) => count),
+                backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                borderColor: '#3b82f6',
+                pointBackgroundColor: '#3b82f6',
+                pointBorderColor: '#fff',
+                pointHoverBackgroundColor: '#fff',
+                pointHoverBorderColor: '#3b82f6'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                r: {
+                    angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+                    grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                    pointLabels: {
+                        color: '#9CA3AF',
+                        font: { size: 11 }
+                    },
+                    ticks: { display: false, backdropColor: 'transparent' }
+                }
+            },
+            plugins: {
+                legend: { display: false }
+            }
+        }
+    });
+}
+
 // ============================================================================
 // TABUĽKY
 // ============================================================================
@@ -535,35 +605,40 @@ function _doUpdateStatistics() {
         return;
     }
     
-    console.time('⏱️ Štatistiky update');
-    
-    // Calculate statistics (s cache)
+    // Calculate statistics
     const stats = calculateStatistics(territories);
     statsState.statsCache = stats;
     
-    // Update summary cards
+    // 1. Update Summary Cards (ak existujú)
     updateSummaryCards(stats);
     
-    // Create charts based on view type
-    if (statsState.viewType === 'compare' && statsState.selectedDistricts.length > 0) {
-        createComparisonCharts(territories);
-    } else {
-        // Lazy load charts - vytvor ich postupne
-        requestAnimationFrame(() => createRiskChart(stats));
-        requestAnimationFrame(() => createMunicipalitiesChart(stats));
-        requestAnimationFrame(() => createEventsChart(stats));
-        requestAnimationFrame(() => createDistrictsChart(stats));
-        requestAnimationFrame(() => createProbabilityChart(stats));
-        requestAnimationFrame(() => createFactorsChart(stats));
+    // 2. NOVÉ: Update Risk Score Display
+    const riskScoreEl = document.getElementById('riskScoreDisplay');
+    if (riskScoreEl) {
+        riskScoreEl.textContent = stats.riskScore;
+        // Zmena farby podľa skóre
+        const score = parseFloat(stats.riskScore);
+        if (score > 7) riskScoreEl.style.color = '#ef4444'; // Critical
+        else if (score > 4) riskScoreEl.style.color = '#f97316'; // High
+        else riskScoreEl.style.color = '#22c55e'; // Low
     }
     
-    // NOVÉ ŠTATISTIKY - Render nových štatistík
+    // 3. Renderovanie grafov
+    requestAnimationFrame(() => createRiskChart(stats));
+    requestAnimationFrame(() => createMunicipalitiesChart(stats));
+    requestAnimationFrame(() => createEventsChart(stats));
+    requestAnimationFrame(() => createDistrictsChart(stats)); // Obsahuje cross-filtering
+    requestAnimationFrame(() => createProbabilityChart(stats));
+    requestAnimationFrame(() => createVulnerabilityRadar(stats)); // <--- NOVÝ RADAR
+    
+    // Ostatné tabuľky a mapy
     renderTop10Table(territories);
     renderDistrictHeatmap(territories);
-    initializeRiskMap(territories)
     
-    console.timeEnd("⏱️ Štatistiky update");
-    console.log("✅ Štatistiky aktualizované");
+    // Trend analýza (ak máš pridaný canvas v HTML)
+    createTrendChart(territories);
+    
+    initializeRiskMap(territories);
 }
     console.log('✅ Štatistiky aktualizované');
 

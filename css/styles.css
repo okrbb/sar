@@ -3459,3 +3459,17 @@ textarea.form-control {
 .marker-cluster-risk-low div {
     background-color: rgba(34, 197, 94, 0.8);
 }
+
+/* Gradientný text pre Risk Score */
+#riskScoreDisplay {
+    font-size: 4rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+    /* Trik pre gradientný text */
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    /* Fallback pre prehliadače, ktoré to nepodporujú */
+    color: #ef4444; 
+    display: inline-block;
+}
