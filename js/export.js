@@ -35,33 +35,123 @@ export async function exportToExcel(territories, municipalities, events, factors
         
         // Vytvor workbook
         const workbook = new ExcelJS.Workbook();
-        workbook.creator = 'SAMU';
+        workbook.creator = 'SAR';
         workbook.created = new Date();
         
         // Vytvor worksheet
         const worksheet = workbook.addWorksheet('Analýza území');
         
         // Definuj stĺpce s hlavičkami
+        // UPRAVENÉ: Všetky stĺpce majú teraz zapnuté zalamovanie (wrapText)
         worksheet.columns = [
-            { header: 'Kód obce', key: 'municipalityCode', width: 12 },
-            { header: 'Obec', key: 'municipalityName', width: 28 },
-            { header: 'Okres', key: 'district', width: 22 },
-            { header: 'Kraj', key: 'region', width: 28 },
-            { header: 'Kód javu', key: 'eventCode', width: 12 },
-            { header: 'Krízový jav', key: 'eventName', width: 38 },
-            { header: 'Ohrozujúci faktor', key: 'factorName', width: 28 },
-            { header: 'Zdroj rizika', key: 'riskSource', width: 32 },
-            { header: 'Pravdepodobnosť', key: 'probability', width: 22 },
-            { header: 'Úroveň rizika', key: 'riskLevel', width: 16 },
-            { header: 'Ohrozené obyvateľstvo', key: 'endangeredPopulation', width: 22 },
-            { header: 'Ohrozená plocha (km²)', key: 'endangeredArea', width: 22 },
-            { header: 'Predpokladaný sekundárny krízový jav', key: 'predictedDisruption', width: 28 }
+            { 
+                header: 'Kód obce', 
+                key: 'municipalityCode', 
+                width: 12,
+                style: { alignment: { horizontal: 'left', wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Obec', 
+                key: 'municipalityName', 
+                width: 18,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Okres', 
+                key: 'district', 
+                width: 18,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Kraj', 
+                key: 'region', 
+                width: 18,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Kód javu', 
+                key: 'eventCode', 
+                width: 12,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Krízový jav', 
+                key: 'eventName', 
+                width: 27,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Ohrozujúci faktor', 
+                key: 'factorName', 
+                width: 18,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Zdroj rizika', 
+                key: 'riskSource', 
+                width: 27,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Pravdepodobnosť', 
+                key: 'probability', 
+                width: 22,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Počet výskytu za obdobie', 
+                key: 'probabilitylevel', 
+                width: 14,
+                style: { alignment: { horizontal: 'left', wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Úroveň rizika', 
+                key: 'riskLevel', 
+                width: 9,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Ohrozené obyvateľstvo', 
+                key: 'endangeredPopulation', 
+                width: 14,
+                style: { alignment: { horizontal: 'left', wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Ohrozená plocha (km²)', 
+                key: 'endangeredArea', 
+                width: 15,
+                style: { alignment: { horizontal: 'left', wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Predpokladaný sekundárny krízový jav 1', 
+                key: 'predictedDisruption', 
+                width: 27, 
+                style: { alignment: { wrapText: true, vertical: 'top' } } 
+            },
+            { 
+                header: 'Predpokladaný sekundárny krízový jav 2', 
+                key: 'predictedDisruption2', 
+                width: 27, 
+                style: { alignment: { wrapText: true, vertical: 'top' } } 
+            },
+            { 
+                header: 'Predpokladaný sekundárny krízový jav 3', 
+                key: 'predictedDisruption3', 
+                width: 27, 
+                style: { alignment: { wrapText: true, vertical: 'top' } } 
+            },
+            { 
+                header: 'Presah územia', 
+                key: 'possibleOverlap', 
+                width: 9,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            }
         ];
         
         // Pridaj dáta
         sortedTerritories.forEach(territory => {
             worksheet.addRow({
-                municipalityCode: territory.municipalityCode || '',
+                municipalityCode: parseInt(territory.municipalityCode) || null,
                 municipalityName: territory.municipalityName || '',
                 district: territory.district || '',
                 region: territory.region || '',
@@ -70,10 +160,14 @@ export async function exportToExcel(territories, municipalities, events, factors
                 factorName: territory.factorName || '',
                 riskSource: territory.riskSource || '',
                 probability: territory.probability || '',
+                probabilitylevel: parseInt(territory.probabilitylevel) || null,
                 riskLevel: getRiskLabel(territory.riskLevel),
-                endangeredPopulation: territory.endangeredPopulation || 0,
-                endangeredArea: territory.endangeredArea || 0,
-                predictedDisruption: territory.predictedDisruption || ''
+                endangeredPopulation: parseInt(territory.endangeredPopulation) || null,
+                endangeredArea: parseInt(territory.endangeredArea) || null,
+                predictedDisruption: territory.predictedDisruption || '',
+                predictedDisruption2: territory.predictedDisruption2 || '',
+                predictedDisruption3: territory.predictedDisruption3 || '',
+                possibleOverlap: territory.possibleOverlap || ''
             });
         });
         
@@ -96,9 +190,10 @@ export async function exportToExcel(territories, municipalities, events, factors
         };
         
         // Zapni autofilter
+        // UPRAVENÉ: Rozšírené na 17 stĺpcov (aby pokrývalo všetky stĺpce)
         worksheet.autoFilter = {
             from: { row: 1, column: 1 },
-            to: { row: 1, column: 13 }
+            to: { row: 1, column: 17 }
         };
         
         // Zamrazni prvý riadok
@@ -144,7 +239,7 @@ export async function exportToExcel(territories, municipalities, events, factors
             type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
         });
         
-        const fileName = `SAMU_Analyza_${formatDate(new Date())}.xlsx`;
+        const fileName = `SAR_Analyza_${formatDate(new Date())}.xlsx`;
         
         // Stiahni súbor
         const link = document.createElement('a');
@@ -184,7 +279,7 @@ export async function exportFilteredToExcel(filteredTerritories, filters = {}) {
         
         // Vytvor workbook
         const workbook = new ExcelJS.Workbook();
-        workbook.creator = 'SAMU';
+        workbook.creator = 'SAR';
         workbook.created = new Date();
         
         // Vytvor worksheet
@@ -192,25 +287,114 @@ export async function exportFilteredToExcel(filteredTerritories, filters = {}) {
         
         // Definuj stĺpce
         worksheet.columns = [
-            { header: 'Kód obce', key: 'municipalityCode', width: 12 },
-            { header: 'Obec', key: 'municipalityName', width: 28 },
-            { header: 'Okres', key: 'district', width: 22 },
-            { header: 'Kraj', key: 'region', width: 28 },
-            { header: 'Kód javu', key: 'eventCode', width: 12 },
-            { header: 'Krízový jav', key: 'eventName', width: 38 },
-            { header: 'Ohrozujúci faktor', key: 'factorName', width: 28 },
-            { header: 'Zdroj rizika', key: 'riskSource', width: 32 },
-            { header: 'Pravdepodobnosť', key: 'probability', width: 22 },
-            { header: 'Úroveň rizika', key: 'riskLevel', width: 16 },
-            { header: 'Ohrozené obyvateľstvo', key: 'endangeredPopulation', width: 22 },
-            { header: 'Ohrozená plocha (km²)', key: 'endangeredArea', width: 22 },
-            { header: 'Predpokladaný sekundárny krízový jav', key: 'predictedDisruption', width: 28 }
+            { 
+                header: 'Kód obce', 
+                key: 'municipalityCode', 
+                width: 12,
+                style: { alignment: { horizontal: 'left', wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Obec', 
+                key: 'municipalityName', 
+                width: 18,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Okres', 
+                key: 'district', 
+                width: 18,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Kraj', 
+                key: 'region', 
+                width: 18,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Kód javu', 
+                key: 'eventCode', 
+                width: 12,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Krízový jav', 
+                key: 'eventName', 
+                width: 27,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Ohrozujúci faktor', 
+                key: 'factorName', 
+                width: 18,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Zdroj rizika', 
+                key: 'riskSource', 
+                width: 27,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Pravdepodobnosť', 
+                key: 'probability', 
+                width: 22,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Počet výskytu za obdobie', 
+                key: 'probabilitylevel', 
+                width: 14,
+                style: { alignment: { horizontal: 'left', wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Úroveň rizika', 
+                key: 'riskLevel', 
+                width: 9,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Ohrozené obyvateľstvo', 
+                key: 'endangeredPopulation', 
+                width: 14,
+                style: { alignment: { horizontal: 'left', wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Ohrozená plocha (km²)', 
+                key: 'endangeredArea', 
+                width: 15,
+                style: { alignment: { horizontal: 'left', wrapText: true, vertical: 'top' } }
+            },
+            { 
+                header: 'Predpokladaný sekundárny krízový jav 1', 
+                key: 'predictedDisruption', 
+                width: 27, 
+                style: { alignment: { wrapText: true, vertical: 'top' } } 
+            },
+            { 
+                header: 'Predpokladaný sekundárny krízový jav 2', 
+                key: 'predictedDisruption2', 
+                width: 27, 
+                style: { alignment: { wrapText: true, vertical: 'top' } } 
+            },
+            { 
+                header: 'Predpokladaný sekundárny krízový jav 3', 
+                key: 'predictedDisruption3', 
+                width: 27, 
+                style: { alignment: { wrapText: true, vertical: 'top' } } 
+            },
+            { 
+                header: 'Presah územia', 
+                key: 'possibleOverlap', 
+                width: 9,
+                style: { alignment: { wrapText: true, vertical: 'top' } }
+            }
         ];
         
         // Pridaj dáta
         sortedTerritories.forEach(territory => {
             worksheet.addRow({
-                municipalityCode: territory.municipalityCode || '',
+                municipalityCode: parseInt(territory.municipalityCode) || null,
                 municipalityName: territory.municipalityName || '',
                 district: territory.district || '',
                 region: territory.region || '',
@@ -219,10 +403,14 @@ export async function exportFilteredToExcel(filteredTerritories, filters = {}) {
                 factorName: territory.factorName || '',
                 riskSource: territory.riskSource || '',
                 probability: territory.probability || '',
+                probabilitylevel: parseInt(territory.probabilitylevel) || null,
                 riskLevel: getRiskLabel(territory.riskLevel),
-                endangeredPopulation: territory.endangeredPopulation || 0,
-                endangeredArea: territory.endangeredArea || 0,
-                predictedDisruption: territory.predictedDisruption || ''
+                endangeredPopulation: parseInt(territory.endangeredPopulation) || null,
+                endangeredArea: parseInt(territory.endangeredArea) || null,
+                predictedDisruption: territory.predictedDisruption || '',
+                predictedDisruption2: territory.predictedDisruption2 || '',
+                predictedDisruption3: territory.predictedDisruption3 || '',
+                possibleOverlap: territory.possibleOverlap || ''
             });
         });
         
@@ -244,7 +432,7 @@ export async function exportFilteredToExcel(filteredTerritories, filters = {}) {
             bottom: { style: 'medium', color: { argb: 'FF000000' } }
         };
         
-        // Zapni autofilter
+        // Zapni autofilter pre všetkých 13 stĺpcov
         worksheet.autoFilter = {
             from: { row: 1, column: 1 },
             to: { row: 1, column: 13 }
@@ -268,7 +456,7 @@ export async function exportFilteredToExcel(filteredTerritories, filters = {}) {
             fileNamePart = `okres_${sortedTerritories[0].district.replace(/\s+/g, '_')}`;
         }
         
-        const fileName = `SAMU_${fileNamePart}_${formatDate(new Date())}.xlsx`;
+        const fileName = `SAR_${fileNamePart}_${formatDate(new Date())}.xlsx`;
         console.log('📊 Názov súboru:', fileName);
         
         // Generuj súbor
@@ -345,7 +533,7 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                 return {
                     columns: [
                         { 
-                            text: 'SAMU - Štatistický report', 
+                            text: 'SAR - Štatistický report', 
                             style: 'header', 
                             alignment: 'center' 
                         }
@@ -667,7 +855,7 @@ export async function exportToPDF(territories, municipalities, events, factors) 
         };
         
         // Vytvor a stiahni PDF
-        const fileName = `SAMU_Statistiky_${formatDate(new Date())}.pdf`;
+        const fileName = `SAR_Statistiky_${formatDate(new Date())}.pdf`;
         pdfMake.createPdf(docDefinition).download(fileName);
         
         console.log('✅ PDF štatistický report úspešný:', fileName);
@@ -760,7 +948,12 @@ function calculatePDFStatistics(territories) {
     territories.forEach(territory => {
         // Risk levels
         const riskLevel = territory.riskLevel || 'low';
-        stats.riskLevels[riskLevel]++;
+        if (stats.riskLevels[riskLevel] !== undefined) {
+            stats.riskLevels[riskLevel]++;
+        } else {
+            // Fallback pre neznáme levely
+            stats.riskLevels.low++;
+        }
         
         // Municipalities
         if (!stats.municipalities[territory.municipalityName]) {
@@ -781,11 +974,14 @@ function calculatePDFStatistics(territories) {
                 critical: 0,
                 high: 0,
                 medium: 0,
-                low: 0
+                low: 0,
+                population: 0
             };
         }
         stats.districts[territory.district].total++;
-        stats.districts[territory.district][riskLevel]++;
+        if (stats.districts[territory.district][riskLevel] !== undefined) {
+            stats.districts[territory.district][riskLevel]++;
+        }
         
         // Probabilities
         if (!stats.probabilities[territory.probability]) {
@@ -799,9 +995,14 @@ function calculatePDFStatistics(territories) {
         }
         stats.factors[territory.factorName]++;
         
-        // Totals
-        stats.totalPopulation += territory.endangeredPopulation || 0;
-        stats.totalArea += territory.endangeredArea || 0;
+        // Totals - OPRAVA TU (Explicitná konverzia na čísla)
+        // Používame parseInt pre ľudí a parseFloat pre plochu
+        // isNaN kontrola zabezpečí, že ak je hodnota null/undefined, pripočíta sa 0
+        const pop = parseInt(territory.endangeredPopulation);
+        stats.totalPopulation += isNaN(pop) ? 0 : pop;
+
+        const area = parseFloat(territory.endangeredArea);
+        stats.totalArea += isNaN(area) ? 0 : area;
     });
     
     return stats;
