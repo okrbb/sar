@@ -190,7 +190,6 @@ export async function exportToExcel(territories, municipalities, events, factors
         };
         
         // Zapni autofilter
-        // UPRAVENÉ: Rozšírené na 17 stĺpcov (aby pokrývalo všetky stĺpce)
         worksheet.autoFilter = {
             from: { row: 1, column: 1 },
             to: { row: 1, column: 17 }
@@ -521,6 +520,35 @@ export async function exportToPDF(territories, municipalities, events, factors) 
         
         const probabilities = Object.entries(stats.probabilities)
             .sort((a, b) => b[1] - a[1]);
+            
+        // ====================================================================
+        // VLASTNÝ LAYOUT TABULIEK (Oprava zarovnania)
+        // ====================================================================
+        const customTableLayout = {
+            hLineWidth: function(i, node) {
+                return (i === 0 || i === node.table.body.length) ? 0 : 1;
+            },
+            vLineWidth: function(i, node) {
+                return 0;
+            },
+            hLineColor: function(i, node) {
+                return (i === 1) ? '#2980b9' : '#e0e0e0'; // Modrá čiara pod hlavičkou, inak sivá
+            },
+            // DÔLEŽITÉ: Vynútené odsadenie zľava (paddingLeft) pre všetky stĺpce
+            // (vrátane prvého, kde i === 0), aby text nebol nalepený na okraj.
+            paddingLeft: function(i, node) {
+                return 8; 
+            },
+            paddingRight: function(i, node) {
+                return 8;
+            },
+            paddingTop: function(i, node) {
+                return 8;
+            },
+            paddingBottom: function(i, node) {
+                return 8;
+            }
+        };
         
         // Definícia PDF dokumentu
         const docDefinition = {
@@ -567,18 +595,10 @@ export async function exportToPDF(territories, municipalities, events, factors) 
             // Obsah
             content: [
                 // TITULKA
-                { 
-                    text: 'Analýza území', 
-                    style: 'title', 
-                    margin: [0, 0, 0, 5] 
-                },
-                { 
-                    text: 'Štatistický prehľad mimoriadnych udalostí', 
-                    style: 'subtitle',
-                    margin: [0, 0, 0, 30]
-                },
+                { text: 'Analýza území', style: 'title', margin: [0, 0, 0, 5] },
+                { text: 'Štatistický prehľad mimoriadnych udalostí', style: 'subtitle', margin: [0, 0, 0, 30] },
                 
-                // PREHĽAD KĽÚČOVÝCH ČÍSEL
+                // PREHĽAD KĽÚČOVÝCH ČÍSEL (Táto tabuľka nepoužíva custom layout, má vlastné bordery)
                 {
                     table: {
                         widths: ['*', '*', '*', '*'],
@@ -589,36 +609,28 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                                         { text: stats.total.toLocaleString('sk-SK') + '\n', fontSize: 24, bold: true, color: '#2980b9' },
                                         { text: 'Celkový počet\nanalýz', fontSize: 10, color: '#666' }
                                     ],
-                                    alignment: 'center',
-                                    border: [false, false, false, false],
-                                    margin: [0, 10, 0, 10]
+                                    alignment: 'center', border: [false, false, false, false], margin: [0, 10, 0, 10]
                                 },
                                 { 
                                     text: [
                                         { text: Object.keys(stats.municipalities).length + '\n', fontSize: 24, bold: true, color: '#2980b9' },
                                         { text: 'Počet obcí\nv analýze', fontSize: 10, color: '#666' }
                                     ],
-                                    alignment: 'center',
-                                    border: [false, false, false, false],
-                                    margin: [0, 10, 0, 10]
+                                    alignment: 'center', border: [false, false, false, false], margin: [0, 10, 0, 10]
                                 },
                                 { 
                                     text: [
                                         { text: stats.totalPopulation.toLocaleString('sk-SK') + '\n', fontSize: 24, bold: true, color: '#2980b9' },
                                         { text: 'Ohrozené\nobyvatele', fontSize: 10, color: '#666' }
                                     ],
-                                    alignment: 'center',
-                                    border: [false, false, false, false],
-                                    margin: [0, 10, 0, 10]
+                                    alignment: 'center', border: [false, false, false, false], margin: [0, 10, 0, 10]
                                 },
                                 { 
                                     text: [
                                         { text: stats.totalArea.toFixed(1) + ' km²\n', fontSize: 24, bold: true, color: '#2980b9' },
                                         { text: 'Ohrozená\nplocha', fontSize: 10, color: '#666' }
                                     ],
-                                    alignment: 'center',
-                                    border: [false, false, false, false],
-                                    margin: [0, 10, 0, 10]
+                                    alignment: 'center', border: [false, false, false, false], margin: [0, 10, 0, 10]
                                 }
                             ]
                         ]
@@ -627,58 +639,45 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                 },
                 
                 // ROZDELENIE PODĽA ÚROVNE RIZIKA
-                { 
-                    text: 'Rozdelenie podľa úrovne rizika', 
-                    style: 'heading',
-                    margin: [0, 10, 0, 10]
-                },
+                { text: 'Rozdelenie podľa úrovne rizika', style: 'heading', margin: [0, 10, 0, 10] },
                 {
-                    columns: [
-                        {
-                            width: '*',
-                            table: {
-                                widths: ['*', 60, 80],
-                                body: [
-                                    [
-                                        { text: 'Úroveň', style: 'tableHeader' },
-                                        { text: 'Počet', style: 'tableHeader' },
-                                        { text: 'Podiel', style: 'tableHeader' }
-                                    ],
-                                    [
-                                        { text: '🔴 Kritické', color: '#dc3545', bold: true },
-                                        { text: stats.riskLevels.critical.toString(), alignment: 'center' },
-                                        { text: ((stats.riskLevels.critical / stats.total * 100).toFixed(1) + '%'), alignment: 'center' }
-                                    ],
-                                    [
-                                        { text: '🟠 Vysoké', color: '#fd7e14', bold: true },
-                                        { text: stats.riskLevels.high.toString(), alignment: 'center' },
-                                        { text: ((stats.riskLevels.high / stats.total * 100).toFixed(1) + '%'), alignment: 'center' }
-                                    ],
-                                    [
-                                        { text: '🟡 Stredné', color: '#ffc107', bold: true },
-                                        { text: stats.riskLevels.medium.toString(), alignment: 'center' },
-                                        { text: ((stats.riskLevels.medium / stats.total * 100).toFixed(1) + '%'), alignment: 'center' }
-                                    ],
-                                    [
-                                        { text: '🟢 Nízke', color: '#28a745', bold: true },
-                                        { text: stats.riskLevels.low.toString(), alignment: 'center' },
-                                        { text: ((stats.riskLevels.low / stats.total * 100).toFixed(1) + '%'), alignment: 'center' }
-                                    ]
-                                ]
-                            },
-                            layout: 'lightHorizontalLines'
-                        }
-                    ],
+                    table: {
+                        widths: ['*', 60, 80],
+                        body: [
+                            [
+                                { text: 'Úroveň', style: 'tableHeader', alignment: 'left' },
+                                { text: 'Počet', style: 'tableHeader' },
+                                { text: 'Podiel', style: 'tableHeader' }
+                            ],
+                            [
+                                { text: '● Kritické', color: '#dc3545', bold: true },
+                                { text: stats.riskLevels.critical.toString(), alignment: 'center' },
+                                { text: ((stats.riskLevels.critical / stats.total * 100).toFixed(1) + '%'), alignment: 'center' }
+                            ],
+                            [
+                                { text: '● Vysoké', color: '#fd7e14', bold: true },
+                                { text: stats.riskLevels.high.toString(), alignment: 'center' },
+                                { text: ((stats.riskLevels.high / stats.total * 100).toFixed(1) + '%'), alignment: 'center' }
+                            ],
+                            [
+                                { text: '● Stredné', color: '#ffc107', bold: true },
+                                { text: stats.riskLevels.medium.toString(), alignment: 'center' },
+                                { text: ((stats.riskLevels.medium / stats.total * 100).toFixed(1) + '%'), alignment: 'center' }
+                            ],
+                            [
+                                { text: '● Nízke', color: '#28a745', bold: true },
+                                { text: stats.riskLevels.low.toString(), alignment: 'center' },
+                                { text: ((stats.riskLevels.low / stats.total * 100).toFixed(1) + '%'), alignment: 'center' }
+                            ]
+                        ]
+                    },
+                    layout: customTableLayout, // APLIKOVANÝ FIX
                     margin: [0, 0, 0, 30]
                 },
                 
                 // TOP 10 OBCÍ
                 { text: '', pageBreak: 'before' },
-                { 
-                    text: 'Top 10 najohrozenejších obcí', 
-                    style: 'heading',
-                    margin: [0, 0, 0, 10]
-                },
+                { text: 'Top 10 najohrozenejších obcí', style: 'heading', margin: [0, 0, 0, 10] },
                 {
                     table: {
                         headerRows: 1,
@@ -686,7 +685,7 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                         body: [
                             [
                                 { text: 'Por.', style: 'tableHeader' },
-                                { text: 'Obec', style: 'tableHeader' },
+                                { text: 'Obec', style: 'tableHeader', alignment: 'left' },
                                 { text: 'Počet rizík', style: 'tableHeader' }
                             ],
                             ...topMunicipalities.map(([name, count], index) => [
@@ -696,16 +695,12 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                             ])
                         ]
                     },
-                    layout: 'lightHorizontalLines',
+                    layout: customTableLayout, // APLIKOVANÝ FIX
                     margin: [0, 0, 0, 30]
                 },
                 
                 // TOP 15 KRÍZOVÝCH JAVOV
-                { 
-                    text: 'Top 15 najčastejších krízových javov', 
-                    style: 'heading',
-                    margin: [0, 10, 0, 10]
-                },
+                { text: 'Top 10 najčastejších krízových javov', style: 'heading', margin: [0, 10, 0, 10] },
                 {
                     table: {
                         headerRows: 1,
@@ -713,7 +708,7 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                         body: [
                             [
                                 { text: 'Por.', style: 'tableHeader' },
-                                { text: 'Krízový jav', style: 'tableHeader' },
+                                { text: 'Krízový jav', style: 'tableHeader', alignment: 'left' },
                                 { text: 'Výskyty', style: 'tableHeader' }
                             ],
                             ...topEvents.map(([name, count], index) => [
@@ -723,28 +718,24 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                             ])
                         ]
                     },
-                    layout: 'lightHorizontalLines',
+                    layout: customTableLayout, // APLIKOVANÝ FIX
                     margin: [0, 0, 0, 30]
                 },
                 
                 // OKRESY
                 { text: '', pageBreak: 'before' },
-                { 
-                    text: 'Top 10 okresov podľa počtu rizík', 
-                    style: 'heading',
-                    margin: [0, 0, 0, 10]
-                },
+                { text: 'Top 10 okresov podľa počtu rizík', style: 'heading', margin: [0, 0, 0, 10] },
                 {
                     table: {
                         headerRows: 1,
-                        widths: [30, '*', 50, 50, 50, 50],
+                        widths: [30, '*', 55, 55, 55, 55],
                         body: [
                             [
                                 { text: 'Por.', style: 'tableHeader' },
-                                { text: 'Okres', style: 'tableHeader' },
+                                { text: 'Okres', style: 'tableHeader', alignment: 'left' },
                                 { text: 'Celkom', style: 'tableHeader' },
-                                { text: 'Kritické', style: 'tableHeader', fillColor: '#fee2e2' },
-                                { text: 'Vysoké', style: 'tableHeader', fillColor: '#ffedd5' },
+                                { text: 'Kritické', style: 'tableHeader' },
+                                { text: 'Vysoké', style: 'tableHeader' },
                                 { text: 'Ostatné', style: 'tableHeader' }
                             ],
                             ...topDistricts.map(([name, data], index) => [
@@ -757,16 +748,12 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                             ])
                         ]
                     },
-                    layout: 'lightHorizontalLines',
+                    layout: customTableLayout, // APLIKOVANÝ FIX
                     margin: [0, 0, 0, 30]
                 },
                 
                 // FAKTORY
-                { 
-                    text: 'Top 10 ohrozujúcich faktorov', 
-                    style: 'heading',
-                    margin: [0, 10, 0, 10]
-                },
+                { text: 'Top 10 ohrozujúcich faktorov', style: 'heading', margin: [0, 10, 0, 10] },
                 {
                     table: {
                         headerRows: 1,
@@ -774,7 +761,7 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                         body: [
                             [
                                 { text: 'Por.', style: 'tableHeader' },
-                                { text: 'Faktor', style: 'tableHeader' },
+                                { text: 'Faktor', style: 'tableHeader', alignment: 'left' },
                                 { text: 'Výskyty', style: 'tableHeader' }
                             ],
                             ...topFactors.map(([name, count], index) => [
@@ -784,23 +771,19 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                             ])
                         ]
                     },
-                    layout: 'lightHorizontalLines',
+                    layout: customTableLayout, // APLIKOVANÝ FIX
                     margin: [0, 0, 0, 30]
                 },
                 
                 // PRAVDEPODOBNOSTI
-                { 
-                    text: 'Rozdelenie podľa pravdepodobnosti', 
-                    style: 'heading',
-                    margin: [0, 10, 0, 10]
-                },
+                { text: 'Rozdelenie podľa pravdepodobnosti', style: 'heading', margin: [0, 10, 0, 10] },
                 {
                     table: {
                         headerRows: 1,
                         widths: ['*', 80, 80],
                         body: [
                             [
-                                { text: 'Pravdepodobnosť', style: 'tableHeader' },
+                                { text: 'Pravdepodobnosť', style: 'tableHeader', alignment: 'left' },
                                 { text: 'Počet', style: 'tableHeader' },
                                 { text: 'Podiel', style: 'tableHeader' }
                             ],
@@ -811,41 +794,17 @@ export async function exportToPDF(territories, municipalities, events, factors) 
                             ])
                         ]
                     },
-                    layout: 'lightHorizontalLines'
+                    layout: customTableLayout // APLIKOVANÝ FIX
                 }
             ],
             
             // Štýly
             styles: {
-                header: {
-                    fontSize: 16,
-                    bold: true,
-                    color: '#2980b9'
-                },
-                title: {
-                    fontSize: 22,
-                    bold: true,
-                    alignment: 'center',
-                    color: '#2c3e50'
-                },
-                subtitle: {
-                    fontSize: 12,
-                    alignment: 'center',
-                    color: '#7f8c8d',
-                    italics: true
-                },
-                heading: {
-                    fontSize: 14,
-                    bold: true,
-                    color: '#2980b9'
-                },
-                tableHeader: {
-                    bold: true,
-                    fontSize: 10,
-                    color: 'white',
-                    fillColor: '#2980b9',
-                    alignment: 'center'
-                }
+                header: { fontSize: 16, bold: true, color: '#2980b9' },
+                title: { fontSize: 22, bold: true, alignment: 'center', color: '#2c3e50' },
+                subtitle: { fontSize: 12, alignment: 'center', color: '#7f8c8d', italics: true },
+                heading: { fontSize: 14, bold: true, color: '#2980b9' },
+                tableHeader: { bold: true, fontSize: 10, color: 'white', fillColor: '#2980b9', alignment: 'center' }
             },
             
             defaultStyle: {
